@@ -27,9 +27,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          archive_b64='bootstrap/embedrelay-m1-green.tar.gz.b64'
+          archive_b64="$RUNNER_TEMP/embedrelay-m1-green.tar.gz.b64"
           archive="$RUNNER_TEMP/embedrelay-m1-green.tar.gz"
-          test -f "$archive_b64"
+          shopt -s nullglob
+          parts=(bootstrap/archive.part-*)
+          if [ "${#parts[@]}" -ne 9 ]; then
+            echo "::error::Expected 9 ordered archive parts; found ${#parts[@]}."
+            exit 1
+          fi
+          printf '%s\n' "${parts[@]}" | LC_ALL=C sort | xargs cat >"$archive_b64"
           base64 --decode "$archive_b64" >"$archive"
           printf '%s  %s\n' \
             'a125bb5c991d963cf554a20e944111165d09a305ccc4c2a0922a7d73b5275af9' \
