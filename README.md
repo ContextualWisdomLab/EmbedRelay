@@ -2,4 +2,4 @@
 
 Embedding continuity infrastructure for safe cross-model vector migration.
 
-The first executable milestone is developed through protected pull requests; the default branch remains intentionally minimal until exact-head CI and review gates pass.
+This feature branch starts with a deliberately failing contract test. Production code is added only after the RED failure is observed.
