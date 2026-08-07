@@ -4,5 +4,9 @@
 #![deny(missing_docs)]
 
 mod manifest;
+mod vector;
 
 pub use manifest::{EmbeddingSpaceManifest, EmbeddingSpaceManifestInput, ManifestValidationError};
+pub use vector::{
+    ValidatedEmbeddingVector, VectorCompatibilityError, VectorValidationError,
+};
