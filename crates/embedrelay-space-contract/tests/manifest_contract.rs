@@ -1,3 +1,5 @@
+//! Regression contracts for strict embedding-space manifest identity.
+
 use embedrelay_space_contract::{EmbeddingSpaceManifest, ManifestValidationError};
 
 const VALID_MANIFEST: &str = r#"{
