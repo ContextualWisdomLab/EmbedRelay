@@ -58,7 +58,9 @@ The subsequent production implementation and public export made the complete wor
 - same-space compatibility; and
 - rejection of equal-dimension vectors whose model revision changes the canonical space fingerprint.
 
-The broader repository policy still requires exact 100% production statement/line, branch, function, and region coverage where tooling exposes those measures. The current minimal CI runs the workspace tests but does not yet constitute that complete coverage gate; this draft therefore must not be promoted or released on test success alone.
+The durable CI gate now checks out `github.event.pull_request.head.sha` explicitly, asserts `git rev-parse HEAD` equals that exact PR head, runs the stable workspace tests, and uses pinned `cargo-llvm-cov` 0.8.6 with pinned `nightly-2026-08-01` branch instrumentation. It fails closed unless LLVM reports every line, region, function, and branch covered. Rust/LLVM does not expose an independent statement-count metric; region coverage is retained alongside line and branch coverage rather than relabelled as statement coverage.
+
+On predecessor exact head `8c53a7d651f204570a84127b9ebd6091a915c6ff`, CI run `31228584594`, job `93027659997`, explicitly checked out and asserted that SHA, passed all 20 workspace regression tests, and reported 197/197 lines, 261/261 regions, 30/30 functions, and 22/22 branches covered. Those values establish that the gate works on an exact PR head, but they remain historical evidence after any later commit. Promotion, merge, or release requires the same gate to succeed on the ultimate exact current head.
 
 ## Monitoring
 
