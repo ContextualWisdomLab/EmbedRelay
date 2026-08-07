@@ -18,13 +18,28 @@ const VALID_MANIFEST: &str = r#"{
 #[test]
 fn strict_manifest_accepts_valid_material_identity() {
     let manifest = EmbeddingSpaceManifest::from_json(VALID_MANIFEST).expect("valid manifest");
+    let input = manifest.input();
 
     assert!(manifest.fingerprint().starts_with("sha256:"));
     assert_eq!(manifest.fingerprint().len(), 71);
-    assert!(manifest
-        .canonical_json()
-        .contains("\"provider_identifier\":\"example_provider\""));
-    assert!(!manifest.canonical_json().contains('\n'));
+    assert_eq!(input.provider_identifier(), "example_provider");
+    assert_eq!(input.model_identifier(), "example_model");
+    assert_eq!(input.model_revision(), "revision_1");
+    assert_eq!(input.modality_code(), "text");
+    assert_eq!(input.input_role_code(), "document");
+    assert_eq!(
+        input.instruction_template_hash(),
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    );
+    assert_eq!(input.pooling_strategy_code(), "mean_pooling");
+    assert_eq!(input.normalization_strategy_code(), "l2");
+    assert_eq!(input.vector_dimension(), 16);
+    assert_eq!(input.numeric_precision_code(), "float32");
+    assert_eq!(input.distance_metric_code(), "cosine");
+    assert_eq!(
+        input.preprocessing_policy_hash(),
+        "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    );
 }
 
 #[test]
@@ -74,6 +89,21 @@ fn strict_manifest_rejects_blank_identity_field() {
 }
 
 #[test]
+fn strict_manifest_rejects_empty_identity_field() {
+    let manifest = VALID_MANIFEST.replace(
+        "\"provider_identifier\":\"example_provider\"",
+        "\"provider_identifier\":\"\"",
+    );
+
+    assert_eq!(
+        EmbeddingSpaceManifest::from_json(&manifest).unwrap_err(),
+        ManifestValidationError::InvalidTextField {
+            field_name: "provider_identifier"
+        }
+    );
+}
+
+#[test]
 fn strict_manifest_rejects_identity_field_with_outer_whitespace() {
     let manifest = VALID_MANIFEST.replace(
         "\"model_identifier\":\"example_model\"",
@@ -89,7 +119,7 @@ fn strict_manifest_rejects_identity_field_with_outer_whitespace() {
 }
 
 #[test]
-fn strict_manifest_rejects_malformed_material_hash() {
+fn strict_manifest_rejects_uppercase_material_hash() {
     let manifest = VALID_MANIFEST.replace(
         "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -119,6 +149,21 @@ fn strict_manifest_rejects_short_material_hash() {
 }
 
 #[test]
+fn strict_manifest_rejects_wrong_material_hash_prefix() {
+    let manifest = VALID_MANIFEST.replace(
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sha512:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    );
+
+    assert_eq!(
+        EmbeddingSpaceManifest::from_json(&manifest).unwrap_err(),
+        ManifestValidationError::InvalidSha256Field {
+            field_name: "instruction_template_hash"
+        }
+    );
+}
+
+#[test]
 fn canonical_fingerprint_is_independent_of_json_key_order() {
     let reordered = r#"{
       "vector_dimension":16,
@@ -138,7 +183,6 @@ fn canonical_fingerprint_is_independent_of_json_key_order() {
     let first = EmbeddingSpaceManifest::from_json(VALID_MANIFEST).expect("valid manifest");
     let second = EmbeddingSpaceManifest::from_json(reordered).expect("same valid manifest");
 
-    assert_eq!(first.canonical_json(), second.canonical_json());
     assert_eq!(first.fingerprint(), second.fingerprint());
 }
 
