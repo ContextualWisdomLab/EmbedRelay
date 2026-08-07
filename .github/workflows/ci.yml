@@ -19,7 +19,13 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30
+      - name: Assert exact checkout identity
+        if: github.event_name == 'pull_request'
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
       - name: Stable workspace tests
         run: cargo test --workspace
       - name: Install pinned branch-coverage toolchain
