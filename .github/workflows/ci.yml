@@ -9,15 +9,52 @@ permissions:
   contents: read
 
 concurrency:
-  group: embedrelay-red-${{ github.event.pull_request.number || github.ref }}
+  group: embedrelay-ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  rust-red-contract:
+  rust-contract:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30
-      - run: cargo test --workspace
+      - name: Stable workspace tests
+        run: cargo test --workspace
+      - name: Install pinned branch-coverage toolchain
+        run: rustup toolchain install nightly-2026-08-01 --profile minimal --component llvm-tools-preview
+      - name: Install pinned cargo-llvm-cov
+        run: cargo install cargo-llvm-cov --version 0.8.6 --locked
+      - name: Generate line, region, function, and branch coverage
+        run: >-
+          cargo +nightly-2026-08-01 llvm-cov
+          --workspace
+          --branch
+          --json
+          --summary-only
+          --output-path coverage-summary.json
+      - name: Require exact production coverage
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("coverage-summary.json").read_text(encoding="utf-8"))
+          totals = report["data"][0]["totals"]
+          required_metrics = ("lines", "regions", "functions", "branches")
+          failures = []
+          for metric in required_metrics:
+              summary = totals.get(metric)
+              if summary is None:
+                  failures.append(f"{metric}: metric absent from LLVM coverage output")
+                  continue
+              count = int(summary["count"])
+              covered = int(summary["covered"])
+              if covered != count:
+                  failures.append(f"{metric}: {covered}/{count} covered")
+              print(f"{metric}: {covered}/{count}")
+
+          if failures:
+              raise SystemExit("exact production coverage gate failed: " + "; ".join(failures))
+          PY
