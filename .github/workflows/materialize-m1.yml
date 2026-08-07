@@ -31,8 +31,8 @@ jobs:
           archive="$RUNNER_TEMP/embedrelay-m1-green.tar.gz"
           shopt -s nullglob
           parts=(bootstrap/archive.part-*)
-          if [ "${#parts[@]}" -ne 9 ]; then
-            echo "::error::Expected 9 ordered archive parts; found ${#parts[@]}."
+          if [ "${#parts[@]}" -ne 4 ]; then
+            echo "::error::Expected 4 ordered archive parts; found ${#parts[@]}."
             exit 1
           fi
           printf '%s\n' "${parts[@]}" | LC_ALL=C sort | xargs cat >"$archive_b64"
