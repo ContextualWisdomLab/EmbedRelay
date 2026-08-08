@@ -39,6 +39,7 @@ fn parser_rejects_uuid_versions_other_than_v7() {
         .expect_err("UUIDv4 must not enter the v7 identity boundary");
 
     assert_eq!(error, RelayIdentifierParseError::UnsupportedVersion);
+    assert_eq!(error.to_string(), "identifier must use UUID version 7");
 }
 
 #[test]
@@ -47,4 +48,8 @@ fn parser_rejects_non_rfc_variant_even_when_version_bits_are_seven() {
         .expect_err("Microsoft-variant UUID must not enter the RFC 9562 boundary");
 
     assert_eq!(error, RelayIdentifierParseError::UnsupportedVariant);
+    assert_eq!(
+        error.to_string(),
+        "identifier must use the RFC 9562 UUID variant"
+    );
 }
