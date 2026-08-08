@@ -41,12 +41,6 @@ impl RelayIdentifier {
     }
 }
 
-impl Default for RelayIdentifier {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl fmt::Display for RelayIdentifier {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(formatter)
