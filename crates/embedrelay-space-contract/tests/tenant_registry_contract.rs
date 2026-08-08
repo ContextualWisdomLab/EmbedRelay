@@ -70,7 +70,7 @@ fn registration_records_audit_before_exposing_tenant_state() {
     assert_eq!(event.tenant_id(), tenant_id);
     assert_eq!(event.actor_id(), actor_id);
     assert_eq!(event.space_fingerprint(), fingerprint);
-    assert_eq!(event.action_code(), "space_registered");
+    assert_eq!(event.action_code(), "space_registration_intent");
     assert_ne!(event.event_id(), tenant_id);
     assert_ne!(event.event_id(), actor_id);
 }
