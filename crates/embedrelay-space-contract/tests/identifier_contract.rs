@@ -1,3 +1,5 @@
+//! Integration contract for EmbedRelay's RFC 9562 UUIDv7 identifier boundary.
+
 use embedrelay_space_contract::{RelayIdentifier, RelayIdentifierParseError};
 use uuid::{Variant, Version};
 
