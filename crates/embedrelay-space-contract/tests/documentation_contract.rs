@@ -30,6 +30,7 @@ fn canonical_product_architecture_documents_exist() {
         "docs/TEST_STRATEGY.md",
         "docs/OPERABILITY.md",
         "docs/TRACEABILITY.md",
+        "docs/DOCUMENTATION_FITNESS.md",
         "docs/adr/README.md",
     ];
 
@@ -55,6 +56,25 @@ fn traceability_keeps_planned_migration_components_planned() {
     assert!(traceability.contains("directional role-specific adapters"));
     assert!(traceability.contains("dual-index migration"));
     assert!(traceability.contains("planned, not current"));
+}
+
+#[test]
+fn documentation_fitness_exposes_conversation_planning_gaps_without_overclaiming() {
+    let fitness = read_document("docs/DOCUMENTATION_FITNESS.md");
+    for required_claim in [
+        "Evaluation protocol | **PARTIAL**",
+        "Research and standards traceability | **PARTIAL**",
+        "Machine-readable API and schema artifacts | **PLANNED**",
+        "Physical PostgreSQL ERD | **NOT-APPLICABLE**",
+        "Data model | **PRESENT-CURRENT**",
+        "Migration runbook | **PRESENT-CURRENT**",
+    ] {
+        assert!(
+            fitness.contains(required_claim),
+            "documentation fitness is missing required claim: {required_claim}"
+        );
+    }
+    assert!(fitness.contains("does not make a deployable API or durable PostgreSQL control plane as-built"));
 }
 
 #[test]
