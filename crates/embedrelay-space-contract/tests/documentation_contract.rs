@@ -2,6 +2,19 @@
 
 use std::{fs, path::PathBuf};
 
+const GOVERNING_ADRS: [&str; 10] = [
+    "0001-product-boundary.md",
+    "0002-space-fingerprint.md",
+    "0003-directed-adapters.md",
+    "0004-algorithm-portfolio.md",
+    "0005-dual-index-native-backfill.md",
+    "0006-rust-compute-plane.md",
+    "0007-confidence-abstention.md",
+    "0008-provider-neutral-ports.md",
+    "0009-provenance-security.md",
+    "0010-release-gates.md",
+];
+
 fn workspace_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -80,18 +93,34 @@ fn documentation_fitness_exposes_conversation_planning_gaps_without_overclaiming
 #[test]
 fn adr_index_contains_all_governing_decisions() {
     let index = read_document("docs/adr/README.md");
-    for adr in [
-        "0001-product-boundary.md",
-        "0002-space-fingerprint.md",
-        "0003-directed-adapters.md",
-        "0004-algorithm-portfolio.md",
-        "0005-dual-index-native-backfill.md",
-        "0006-rust-compute-plane.md",
-        "0007-confidence-abstention.md",
-        "0008-provider-neutral-ports.md",
-        "0009-provenance-security.md",
-        "0010-release-gates.md",
-    ] {
+    for adr in GOVERNING_ADRS {
         assert!(index.contains(adr), "ADR index is missing {adr}");
+    }
+}
+
+#[test]
+fn governing_adrs_are_decision_complete() {
+    let required_sections = [
+        "## Context",
+        "## Decision drivers",
+        "## Alternatives considered",
+        "## Decision",
+        "## Consequences",
+        "## Failure and recovery",
+        "## Security and governance impact",
+        "## Verification and acceptance evidence",
+        "## Migration and rollback",
+        "## Supersession",
+    ];
+
+    for adr in GOVERNING_ADRS {
+        let relative_path = format!("docs/adr/{adr}");
+        let document = read_document(&relative_path);
+        for section in required_sections {
+            assert!(
+                document.contains(section),
+                "{relative_path} is missing required ADR section {section}"
+            );
+        }
     }
 }
