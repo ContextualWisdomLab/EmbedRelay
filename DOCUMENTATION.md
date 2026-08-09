@@ -8,6 +8,7 @@
 | UML/runtime flows | [`docs/UML.md`](docs/UML.md) |
 | Conceptual data model / ERD | [`docs/ERD.md`](docs/ERD.md) |
 | API/port/version contract | [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) |
+| Documentation fitness / gap matrix | [`docs/DOCUMENTATION_FITNESS.md`](docs/DOCUMENTATION_FITNESS.md) |
 | ADR register | [`docs/adr/README.md`](docs/adr/README.md) |
 | Security | [`docs/SECURITY.md`](docs/SECURITY.md) |
 | Threat model | [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) |
@@ -23,8 +24,12 @@
 ## Maturity labels
 
 - **active-PR implemented:** executable source exists on PR #1 but is not protected-main/released functionality.
+- **protected-main implemented:** executable source has passed protected integration but is not automatically a released product claim.
 - **planned:** accepted target architecture without executable implementation yet.
 - **accepted target:** governing product/architecture decision.
+- **partial:** some authoritative contract exists while an acceptance-critical implementation/evidence boundary is absent.
 - **conceptual:** logical entity or service boundary, not a claim of durable persistence/deployment.
 
-Current PR #1 implements the storage-independent M1 space/vector/identity/tenant-registry contract. PostgreSQL durability/RLS, adapter training, dual-index routing, confidence-gated translation, native backfill, provider/vector-store ports, and GPU compute remain planned.
+`docs/DOCUMENTATION_FITNESS.md` is the authoritative place to determine whether a document family is current, intentionally consolidated, partial, planned, or not yet applicable. File presence alone is not completeness.
+
+Current PR #1 implements the storage-independent M1 space/vector/identity/tenant-registry contract. PostgreSQL durability/RLS, adapter training, dual-index routing, confidence-gated translation, native backfill, provider/vector-store ports, and GPU compute remain planned or partial until their executable milestones prove otherwise.
