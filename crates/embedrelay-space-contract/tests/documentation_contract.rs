@@ -46,7 +46,7 @@ fn conceptual_erd_does_not_claim_postgres_is_implemented() {
     let erd = read_document("docs/ERD.md");
     assert!(erd.contains("Current PR #1 persists none of these tables yet"));
     assert!(erd.contains("not implemented"));
-    assert!(erd.contains("planned durable PostgreSQL"));
+    assert!(erd.contains("Planned PostgreSQL control-plane ERD"));
 }
 
 #[test]
