@@ -11,10 +11,33 @@ if [[ ! -f "$UP_MIGRATION" || ! -f "$DOWN_MIGRATION" ]]; then
   exit 1
 fi
 
+log_dir="$(mktemp -d)"
+trap 'rm -rf "$log_dir"' EXIT
+
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$UP_MIGRATION"
 
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
-CREATE ROLE embedrelay_test_client NOLOGIN;
+DO $create_role$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+      FROM pg_roles
+     WHERE rolname = 'embedrelay_test_client'
+  ) THEN
+    CREATE ROLE embedrelay_test_client NOLOGIN;
+  END IF;
+END
+$create_role$;
+ALTER ROLE embedrelay_test_client
+  NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
+REVOKE ALL PRIVILEGES ON SCHEMA embedrelay_registry FROM embedrelay_test_client;
+REVOKE ALL PRIVILEGES
+  ON embedrelay_registry.tenant_space_registry,
+     embedrelay_registry.space_registration_audit
+  FROM embedrelay_test_client;
+REVOKE ALL PRIVILEGES
+  ON FUNCTION embedrelay_registry.register_tenant_space(uuid, text)
+  FROM embedrelay_test_client;
 GRANT USAGE ON SCHEMA embedrelay_registry TO embedrelay_test_client;
 GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE
   ON embedrelay_registry.tenant_space_registry,
@@ -114,16 +137,16 @@ race_fingerprint="$(printf 'c%.0s' {1..64})"
 race_sql="SET ROLE embedrelay_test_client; SELECT set_config('embedrelay.tenant_id', '${race_tenant}', false); SELECT embedrelay_registry.register_tenant_space('${race_actor}'::uuid, '${race_fingerprint}');"
 
 set +e
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "$race_sql" >/tmp/embedrelay-race-one.log 2>&1 &
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "$race_sql" >"$log_dir/race-one.log" 2>&1 &
 pid_one=$!
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "$race_sql" >/tmp/embedrelay-race-two.log 2>&1 &
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "$race_sql" >"$log_dir/race-two.log" 2>&1 &
 pid_two=$!
 wait "$pid_one"; status_one=$?
 wait "$pid_two"; status_two=$?
 set -e
 
 if [[ $((status_one == 0 ? 1 : 0)) -eq $((status_two == 0 ? 1 : 0)) ]]; then
-  cat /tmp/embedrelay-race-one.log /tmp/embedrelay-race-two.log >&2
+  cat "$log_dir/race-one.log" "$log_dir/race-two.log" >&2
   echo "concurrent identical registration must produce exactly one winner" >&2
   exit 1
 fi
@@ -144,7 +167,7 @@ END
 RESET ROLE;
 SQL
 
-if psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$DOWN_MIGRATION" >/tmp/embedrelay-rollback-denied.log 2>&1; then
+if psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$DOWN_MIGRATION" >"$log_dir/rollback-denied.log" 2>&1; then
   echo "destructive rollback unexpectedly succeeded without explicit opt-in" >&2
   exit 1
 fi
@@ -162,4 +185,8 @@ END
 SQL
 
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$UP_MIGRATION"
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT to_regclass('embedrelay_registry.tenant_space_registry') IS NOT NULL AS registry_reapplied;" | grep -q 't'
+reapplied="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc "SELECT to_regclass('embedrelay_registry.tenant_space_registry') IS NOT NULL;")"
+if [[ "$reapplied" != "t" ]]; then
+  echo "re-applied up migration did not recreate the tenant registry table" >&2
+  exit 1
+fi
