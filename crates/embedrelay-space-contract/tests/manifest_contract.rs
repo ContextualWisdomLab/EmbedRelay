@@ -121,6 +121,21 @@ fn strict_manifest_rejects_identity_field_with_outer_whitespace() {
 }
 
 #[test]
+fn strict_manifest_rejects_internal_control_characters() {
+    let manifest = VALID_MANIFEST.replace(
+        "\"model_identifier\":\"example_model\"",
+        "\"model_identifier\":\"example\\nmodel\"",
+    );
+
+    assert_eq!(
+        EmbeddingSpaceManifest::from_json(&manifest).unwrap_err(),
+        ManifestValidationError::InvalidTextField {
+            field_name: "model_identifier"
+        }
+    );
+}
+
+#[test]
 fn strict_manifest_rejects_uppercase_material_hash() {
     let manifest = VALID_MANIFEST.replace(
         "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -195,4 +210,13 @@ fn canonical_fingerprint_changes_when_material_identity_changes() {
     let second = EmbeddingSpaceManifest::from_json(&changed).expect("changed valid manifest");
 
     assert_ne!(first.fingerprint(), second.fingerprint());
+}
+
+#[test]
+fn canonical_fingerprint_matches_the_frozen_reference_value() {
+    const FROZEN_FINGERPRINT: &str =
+        "sha256:d105d04ca1cbdf6d8ba00dec0be676045e76059d16e4de404bd71a27d22bccb1";
+    let manifest = EmbeddingSpaceManifest::from_json(VALID_MANIFEST).expect("valid manifest");
+
+    assert_eq!(manifest.fingerprint(), FROZEN_FINGERPRINT);
 }
