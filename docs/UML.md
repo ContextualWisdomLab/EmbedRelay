@@ -1,7 +1,7 @@
 # EmbedRelay UML and Runtime Views
 
 **Status:** Accepted target views; current M1 as-built behavior is marked separately.  
-**Last reviewed:** 2026-08-09
+**Last reviewed:** 2026-08-15
 
 ## Current M1 registration sequence
 
@@ -40,7 +40,7 @@ sequenceDiagram
     participant GPU as GPU Backend
     participant Bench as Fidelity Bench
 
-    Operator->>Registry: request source→target candidate
+    Operator->>Registry: request source→target candidate (input_role=query or document, target_role=legacy_document)
     Registry->>Anchor: resolve authorized paired evidence
     Anchor-->>Forge: train/eval split + provenance
     Forge->>CPU: fit/reference metrics
@@ -74,7 +74,7 @@ sequenceDiagram
         Gateway->>Target: native target query
         Target-->>Fusion: ranked target results
     and legacy bridge path
-        Gateway->>Gate: target→legacy adapter + confidence
+        Gateway->>Gate: target→legacy adapter (input_role=query, target_role=legacy_document) + confidence
         alt eligible
             Gate-->>Gateway: translated legacy-space query
             Gateway->>Legacy: legacy query
