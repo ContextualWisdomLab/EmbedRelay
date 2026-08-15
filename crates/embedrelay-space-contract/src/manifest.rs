@@ -214,8 +214,8 @@ pub enum ManifestValidationError {
         /// Human-readable parser detail suitable for diagnostics.
         message: String,
     },
-    /// A textual identity field is empty or has leading/trailing whitespace.
-    #[error("manifest field `{field_name}` must be non-empty with no outer whitespace")]
+    /// A textual identity field is empty, has outer whitespace, or contains controls.
+    #[error("manifest field `{field_name}` must be printable, non-empty, and have no outer whitespace")]
     InvalidTextField {
         /// Stable schema field name that failed validation.
         field_name: &'static str,
@@ -235,7 +235,7 @@ fn validate_text_field(
     field_name: &'static str,
     value: &str,
 ) -> Result<(), ManifestValidationError> {
-    if value.is_empty() || value.trim() != value {
+    if value.is_empty() || value.trim() != value || value.chars().any(char::is_control) {
         return Err(ManifestValidationError::InvalidTextField { field_name });
     }
     Ok(())
