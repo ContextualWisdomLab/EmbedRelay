@@ -1,7 +1,7 @@
 # EmbedRelay Data Model and ERD
 
 **Status:** Accepted conceptual target model. Current PR #1 persists none of these tables yet.  
-**Last reviewed:** 2026-08-09
+**Last reviewed:** 2026-08-15
 
 The model distinguishes **as-built Rust domain objects** from **planned PostgreSQL persistence**. All persistent object names use descriptive two-or-more-word `snake_case` names.
 
@@ -69,7 +69,7 @@ erDiagram
     EMBEDDING_SPACE {
       uuid embedding_space_id PK
       uuid tenant_record_id FK
-      text canonical_fingerprint UK
+      text canonical_fingerprint
       jsonb canonical_manifest
       text input_role_code
       integer vector_dimension
@@ -77,6 +77,7 @@ erDiagram
       text metric_code
       text lifecycle_status_code
       timestamptz created_at
+      unique tenant_record_id_canonical_fingerprint "tenant_record_id, canonical_fingerprint"
     }
 
     VECTOR_REFERENCE {
@@ -192,6 +193,7 @@ erDiagram
 
 - Every operational record is tenant-bound either directly or through a transactionally constrained parent.
 - UUIDv7 is an opaque identifier shape, not authorization or business chronology.
+- `(tenant_record_id, canonical_fingerprint)` is unique; the same canonical fingerprint may exist independently for different tenants.
 - `canonical_fingerprint` cannot be mutated after dependent vectors/adapters/migrations exist; drift creates a new/quarantined space.
 - A production adapter is immutable after approval; a changed artifact creates a new `adapter_artifact_id`.
 - Audit events are append-only under the durable design.
