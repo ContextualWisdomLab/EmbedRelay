@@ -138,20 +138,23 @@ impl TenantSpaceRegistry {
     /// Return whether a tenant currently owns the exact canonical space fingerprint.
     #[must_use]
     pub fn contains_space(&self, tenant_id: RelayIdentifier, space_fingerprint: &str) -> bool {
-        self.registrations
-            .iter()
-            .any(|(candidate_tenant, candidate_fingerprint)| {
-                *candidate_tenant == tenant_id && candidate_fingerprint == space_fingerprint
-            })
+        self.tenant_entries(tenant_id)
+            .any(|(_, candidate_fingerprint)| candidate_fingerprint == space_fingerprint)
     }
 
     /// Count spaces registered to exactly one tenant without exposing other tenants' entries.
     #[must_use]
     pub fn tenant_space_count(&self, tenant_id: RelayIdentifier) -> usize {
+        self.tenant_entries(tenant_id).count()
+    }
+
+    fn tenant_entries(
+        &self,
+        tenant_id: RelayIdentifier,
+    ) -> impl Iterator<Item = &(RelayIdentifier, String)> {
         self.registrations
-            .iter()
-            .filter(|(candidate_tenant, _)| *candidate_tenant == tenant_id)
-            .count()
+            .range((tenant_id, String::new())..)
+            .take_while(move |(candidate_tenant, _)| *candidate_tenant == tenant_id)
     }
 }
 
