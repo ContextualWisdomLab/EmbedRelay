@@ -1,7 +1,7 @@
 # EmbedRelay Architecture
 
 **Status:** Accepted target architecture; current M1 as-built scope is explicitly labelled.  
-**Last reviewed:** 2026-08-09
+**Last reviewed:** 2026-08-15
 
 ## Architectural goal
 
@@ -101,7 +101,7 @@ flowchart LR
 
 ## Space registry
 
-The registry is the root compatibility authority. It stores immutable canonical manifests/fingerprints and lifecycle state. If output drift is detected under the same provider/model label, the existing space is not mutated; a new/quarantined space identity is required.
+The current M1 registry is a storage-independent in-memory reference that holds only `(tenant_id, canonical_fingerprint)` registration keys after the audit-intent boundary accepts them. The target durable registry is the root compatibility authority and will store immutable canonical manifests/fingerprints plus lifecycle state. If output drift is detected under the same provider/model label, the existing space is not mutated; a new or quarantined space identity is required.
 
 ## Adapter lifecycle
 
