@@ -28,6 +28,14 @@ fn generated_identifiers_are_ordered_uuid_v7_values() {
 }
 
 #[test]
+fn default_identifier_uses_the_same_uuid_v7_contract_as_new() {
+    let identifier = RelayIdentifier::default();
+
+    assert_eq!(identifier.as_uuid().get_version(), Some(Version::SortRand));
+    assert_eq!(identifier.as_uuid().get_variant(), Variant::RFC4122);
+}
+
+#[test]
 fn parser_rejects_non_uuid_input_without_reflecting_it() {
     let error = RelayIdentifier::parse("customer-controlled-secret").expect_err("invalid UUID must fail");
 
