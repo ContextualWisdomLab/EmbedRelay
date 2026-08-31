@@ -1,6 +1,6 @@
 //! Contract tests for durable product and architecture documentation.
 
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, process::Command};
 
 const GOVERNING_ADRS: [&str; 10] = [
     "0001-product-boundary.md",
@@ -27,6 +27,34 @@ fn read_document(relative_path: &str) -> String {
     let path = workspace_root().join(relative_path);
     fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()))
+}
+
+#[test]
+fn ci_uses_committed_lockfile_for_reproducible_dependency_resolution() {
+    let root = workspace_root();
+    let tracked = Command::new("git")
+        .args(["ls-files", "--error-unmatch", "Cargo.lock"])
+        .current_dir(&root)
+        .output()
+        .unwrap_or_else(|error| panic!("failed to inspect tracked files: {error}"));
+
+    if !tracked.status.success() {
+        let generated = fs::read_to_string(root.join("Cargo.lock"))
+            .unwrap_or_else(|error| format!("<failed to read generated Cargo.lock: {error}>"));
+        panic!("Cargo.lock must be committed; hosted Cargo generated:\n{generated}");
+    }
+
+    let ci = read_document(".github/workflows/ci.yml");
+    assert!(
+        ci.contains("run: cargo test --workspace --locked"),
+        "stable workspace tests must use the committed lockfile"
+    );
+    assert!(
+        ci.contains(
+            "cargo +nightly-2026-08-01 llvm-cov\n          --workspace\n          --locked\n"
+        ),
+        "coverage must use the committed lockfile"
+    );
 }
 
 #[test]
