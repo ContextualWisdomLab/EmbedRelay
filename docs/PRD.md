@@ -2,7 +2,7 @@
 
 **Status:** Accepted product baseline; implementation maturity is tracked separately.  
 **Product category:** Embedding Continuity Infrastructure  
-**Last reviewed:** 2026-08-09
+**Last reviewed:** 2026-09-02
 
 ## 1. Product definition
 
@@ -40,7 +40,9 @@ EmbedRelay provides a governed migration bridge so operators can change models w
 
 ## 5. Current M1 implementation maturity
 
-PR #1 currently implements a storage-independent Rust domain slice:
+PR #1 currently contains an active-PR Rust domain slice plus a narrow executable PostgreSQL registry/audit slice.
+
+The Rust slice implements:
 
 - canonical embedding-space fingerprints;
 - fail-closed `float32` vector validation;
@@ -48,15 +50,30 @@ PR #1 currently implements a storage-independent Rust domain slice:
 - opaque RFC 9562 UUIDv7 identifiers;
 - tenant-isolated registry semantics;
 - audit-before-mutation `space_registration_intent` behavior;
-- exact Rust line/region/function/branch coverage gates.
+- exact Rust line/region/function/branch coverage gates;
+- reproducible dependency resolution through a tracked `Cargo.lock` and locked CI commands.
 
-It does **not yet** establish durable PostgreSQL persistence, RLS, append-only audit storage, distributed concurrency, adapter training, dual-index routing, confidence calibration, migration orchestration, or release readiness. Those remain planned/partial until merged and verified.
+The PostgreSQL M1 slice implements on the active PR:
+
+- `tenant_space_registry` and `space_registration_audit` physical relations;
+- PostgreSQL 18 UUIDv7 identifiers;
+- unique per-tenant space registration keyed by `(tenant_id, space_fingerprint)`;
+- forced tenant RLS using explicit `embedrelay.tenant_id` session context;
+- append-only update/delete/truncate denial;
+- audit-first registration coupled transactionally to registry visibility with a deferred reference;
+- deterministic duplicate/concurrent rejection rather than an implicit UPSERT;
+- guarded destructive rollback and migration reapplication contracts;
+- PostgreSQL 18.6 CI coverage for RLS, UUIDv7, immutability, concurrency, and rollback behavior.
+
+These are active-PR source facts only. They are not protected-main or release evidence until the **current exact head** passes all required PostgreSQL/Rust/security/review gates and merges. M1 still lacks measured backup/restore acceptance and full immutable canonical-manifest persistence. Adapter training, confidence calibration, dual-index routing, migration orchestration, provider/vector-store ports, and release readiness remain later planned/partial capabilities.
 
 ## 6. Functional requirements
 
 ### PRD-FR-001 Space registry
 
 Every embedding space SHALL be identified by a canonical fingerprint covering model/provider revision, input role, preprocessing, normalization, dimension, scalar precision, metric contract, and other material encoding parameters. Space identity must be immutable once referenced by vectors or adapters.
+
+The current active-PR physical registry persists the tenant/fingerprint registration boundary only. Persisting the complete versioned canonical manifest without duplicating mutable compatibility facts remains an M1 follow-through requirement.
 
 ### PRD-FR-002 Vector safety
 
@@ -85,6 +102,8 @@ The system SHALL prioritize target-native re-embedding based on risk, usage, unc
 ### PRD-FR-008 Tenant isolation and audit
 
 Registry, adapter, migration, evaluation, and audit state SHALL be tenant-scoped. Authorization may not be inferred from UUID timestamps, model name, vector content, or embedding-space fingerprint alone. State-changing actions require durable audit evidence.
+
+For the current M1 physical slice, direct tenant-scoped tables SHALL use forced RLS; a missing tenant context SHALL fail closed. Durable registry and audit rows are append-only product records. Destructive migration rollback is an explicitly gated operator action rather than ordinary mutation.
 
 ### PRD-FR-009 Drift detection
 
@@ -129,6 +148,8 @@ Experimental methods may not become automatic production cutover gates without r
 - production arithmetic in Rust;
 - exact production line/region/function/branch coverage where LLVM tooling exposes it;
 - public Rust documentation coverage enforced by lints;
+- reproducible Rust dependency resolution from a committed lockfile for release-bound source;
+- executable PostgreSQL migration/RLS/concurrency/rollback tests for the M1 persistence slice;
 - true-transform/parameter-recovery simulations for adapter algorithms;
 - CPU reference and GPU parity when a computationally material GPU backend is introduced;
 - realistic retrieval benchmarks, OOD splits, confidence calibration, migration rollback/replay, tenant isolation, poisoned-anchor, inversion, and drift tests;
@@ -138,10 +159,12 @@ Experimental methods may not become automatic production cutover gates without r
 
 Embeddings, anchors, adapter weights, query logs, and migration artifacts are potentially sensitive. Controls SHALL use tenant-bound authorization, encryption/KMS, bounded retention, auditable export, signed artifacts, anchor-poisoning defenses, inversion-risk review, and purpose-bound access rather than assuming vectors are anonymous.
 
+The active-PR registry slice supplies a concrete forced-RLS and append-only persistence boundary but does not yet implement the broader KMS, retention/export, incident, or service/admin-role design. No CSAP or SOC 2 certification is claimed from this M1 evidence alone.
+
 ## 11. Standalone and ecosystem compatibility
 
 EmbedRelay must operate independently through provider-neutral ports. Optional CWL integrations may connect contextual-orchestrator, naruon, pg-llm-batch, EgressWeave, Keyverse, or other services through typed versioned interfaces. No integration may require direct access to another application's private database.
 
 ## 12. Release acceptance
 
-A release requires integrated protected-head evidence for exact coverage, security, tenant controls, migrations/rollback, adapter/migration evaluation, reproducible artifacts, SBOM/provenance, operability, independent review, and real retrieval fidelity. The current PR is pre-release and must remain Draft until its M1 exit criteria are met.
+A release requires integrated protected-head evidence for exact coverage, security, tenant controls, migrations/rollback, backup/recovery appropriate to the persisted surface, adapter/migration evaluation where those capabilities are included, reproducible artifacts, SBOM/provenance, operability, independent review, and real retrieval fidelity. The current PR is pre-release and remains Draft until its M1 exit criteria are met.
