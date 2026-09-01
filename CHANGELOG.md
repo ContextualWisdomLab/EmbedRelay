@@ -11,6 +11,8 @@ All notable EmbedRelay changes are recorded here. This repository is pre-release
 - Embedding-space identity, migration-governance, service-contract, and identity/authorization architecture decisions.
 - Draft 2020-12 conversion-response payload contract with typed converted, abstained, and error outcomes.
 - Dependency-free documentation contract regression tests for canonical identifiers and digest constraints.
+- Regression coverage requiring the canonical repository baselines and their documentation-index links to remain present, non-empty, and consistent with Rust numerical ownership, fail-closed threshold provenance, and multiword persistence naming.
+- Exact-head `Documentation Quality` GitHub Actions gate using explicit Ubuntu 24.04, immutable checkout pinning, exact-SHA verification, documentation regression execution, and clean diff validation.
 - Repository `AGENTS.md` and `CLAUDE.md` development boundaries.
 - Root `ARCHITECTURE.md` context map separating EmbedRelay from RankWeave, contextual-orchestrator, keyverse, model providers, vector stores, and ingest/retrieval hosts.
 - `docs/product-technical-gap-baseline.md` commercialization ledger and exact-head verification policy.
