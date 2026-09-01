@@ -38,7 +38,6 @@ ALTER TABLE embedrelay_registry.space_registration_audit FORCE ROW LEVEL SECURIT
 
 CREATE POLICY tenant_space_registry_tenant_isolation
     ON embedrelay_registry.tenant_space_registry
-    AS RESTRICTIVE
     FOR ALL
     TO PUBLIC
     USING (
@@ -50,7 +49,6 @@ CREATE POLICY tenant_space_registry_tenant_isolation
 
 CREATE POLICY space_registration_audit_tenant_isolation
     ON embedrelay_registry.space_registration_audit
-    AS RESTRICTIVE
     FOR ALL
     TO PUBLIC
     USING (
