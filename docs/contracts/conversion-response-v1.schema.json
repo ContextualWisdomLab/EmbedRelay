@@ -11,10 +11,14 @@
   "$defs": {
     "spaceId": {
       "type": "string",
+      "minLength": 94,
+      "maxLength": 94,
       "pattern": "^urn:cwl:embed-space:v1:sha256:[0-9a-f]{64}$"
     },
     "sha256": {
       "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
       "pattern": "^[0-9a-f]{64}$"
     },
     "adapterArtifact": {
