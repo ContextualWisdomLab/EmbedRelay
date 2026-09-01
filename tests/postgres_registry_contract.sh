@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${DATABASE_URL:?DATABASE_URL must point at the PostgreSQL 18.4 test database}"
+: "${DATABASE_URL:?DATABASE_URL must point at the PostgreSQL 18.6 test database}"
 
 UP_MIGRATION="migrations/0001_tenant_space_registry.up.sql"
 DOWN_MIGRATION="migrations/0001_tenant_space_registry.down.sql"
@@ -47,20 +47,53 @@ GRANT EXECUTE ON FUNCTION embedrelay_registry.register_tenant_space(uuid, text)
   TO embedrelay_test_client;
 
 SET ROLE embedrelay_test_client;
+DO $$
+BEGIN
+  BEGIN
+    PERFORM embedrelay_registry.register_tenant_space(
+      '017f22e2-79b0-7cc3-98c4-dc0c0c0c073b'::uuid,
+      repeat('a', 64)
+    );
+    RAISE EXCEPTION 'registration unexpectedly succeeded without tenant context';
+  EXCEPTION
+    WHEN insufficient_privilege THEN NULL;
+  END;
+END
+$$;
+
 SELECT set_config('embedrelay.tenant_id', '017f22e2-79b0-7cc3-98c4-dc0c0c0c0739', false);
 
 DO $$
 DECLARE
   first_event uuid;
+  first_record uuid;
   first_fingerprint text := repeat('a', 64);
 BEGIN
+  BEGIN
+    PERFORM embedrelay_registry.register_tenant_space(
+      '017f22e2-79b0-7cc3-98c4-dc0c0c0c073b'::uuid,
+      upper(first_fingerprint)
+    );
+    RAISE EXCEPTION 'non-canonical fingerprint unexpectedly succeeded';
+  EXCEPTION
+    WHEN invalid_parameter_value THEN NULL;
+  END;
+
   first_event := embedrelay_registry.register_tenant_space(
     '017f22e2-79b0-7cc3-98c4-dc0c0c0c073b'::uuid,
     first_fingerprint
   );
 
+  SELECT tenant_space_record_id
+    INTO first_record
+    FROM embedrelay_registry.tenant_space_registry
+   WHERE space_fingerprint = first_fingerprint;
+
   IF uuid_extract_version(first_event) IS DISTINCT FROM 7 THEN
     RAISE EXCEPTION 'audit event must be UUIDv7';
+  END IF;
+  IF uuid_extract_version(first_record) IS DISTINCT FROM 7 THEN
+    RAISE EXCEPTION 'registry record must be UUIDv7';
   END IF;
   IF (SELECT count(*) FROM embedrelay_registry.tenant_space_registry) <> 1 THEN
     RAISE EXCEPTION 'tenant registry must expose exactly one accepted registration';
@@ -91,6 +124,28 @@ BEGIN
     RAISE EXCEPTION 'cross-tenant insert unexpectedly succeeded';
   EXCEPTION
     WHEN insufficient_privilege THEN NULL;
+  END;
+
+  BEGIN
+    UPDATE embedrelay_registry.tenant_space_registry
+       SET space_fingerprint = space_fingerprint;
+    RAISE EXCEPTION 'registry update unexpectedly succeeded';
+  EXCEPTION
+    WHEN SQLSTATE '55000' THEN NULL;
+  END;
+
+  BEGIN
+    DELETE FROM embedrelay_registry.tenant_space_registry;
+    RAISE EXCEPTION 'registry delete unexpectedly succeeded';
+  EXCEPTION
+    WHEN SQLSTATE '55000' THEN NULL;
+  END;
+
+  BEGIN
+    TRUNCATE TABLE embedrelay_registry.tenant_space_registry;
+    RAISE EXCEPTION 'registry truncate unexpectedly succeeded';
+  EXCEPTION
+    WHEN SQLSTATE '55000' THEN NULL;
   END;
 
   BEGIN
