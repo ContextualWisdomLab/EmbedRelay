@@ -17,11 +17,13 @@ Buyer and operator text stays in `README.md`. Architecture decisions stay in `do
 
 ## Verification
 
-Documentation contract regressions that have executable tests must stay runnable with the repository's documented toolchain. The current dependency-free Node contract test is:
+Documentation contract regressions use the repository's existing dependency-free Python verification boundary. Run:
 
 ```bash
-node --test test/conversion-response-contract.test.mjs
+python3 -m unittest tests/test_documentation_contracts.py -v
 ```
+
+This test checks the exact public digest/space-identifier constraints, including LF and CRLF termination cases that JavaScript/JSON-Schema regular-expression anchors can otherwise accept ambiguously.
 
 ## Pull requests
 
