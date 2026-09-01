@@ -18,6 +18,11 @@ CANONICAL_BASELINES = (
     "CLAUDE.md",
     "ARCHITECTURE.md",
     "CHANGELOG.md",
+    "SECURITY.md",
+    "docs/PRD.md",
+    "docs/TRD.md",
+    "docs/TEST_STRATEGY.md",
+    "docs/OPERABILITY.md",
     "docs/product-technical-gap-baseline.md",
 )
 
@@ -83,13 +88,22 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
                 self.assertTrue(path.read_text(encoding="utf-8").strip(), f"empty canonical baseline: {relative_path}")
 
     def test_documentation_index_links_canonical_product_authority(self) -> None:
-        """Make the canonical architecture and commercialization ledger discoverable."""
+        """Make product, engineering, security, test and operability authority discoverable."""
 
         index = (REPOSITORY_ROOT / "docs" / "index.md").read_text(encoding="utf-8")
-        self.assertIn("../ARCHITECTURE.md", index)
-        self.assertIn("product-technical-gap-baseline.md", index)
-        self.assertIn("../AGENTS.md", index)
-        self.assertIn("../CHANGELOG.md", index)
+        for required_link in (
+            "../ARCHITECTURE.md",
+            "product-technical-gap-baseline.md",
+            "../AGENTS.md",
+            "../CHANGELOG.md",
+            "../SECURITY.md",
+            "PRD.md",
+            "TRD.md",
+            "TEST_STRATEGY.md",
+            "OPERABILITY.md",
+        ):
+            with self.subTest(link=required_link):
+                self.assertIn(required_link, index)
 
     def test_agent_rules_keep_rust_numerics_and_fail_closed_thresholds(self) -> None:
         """Guard the production numerical-language and evidence-derived threshold contracts."""
@@ -98,6 +112,16 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
         self.assertIn("Mathematical/vector/linear-algebra/token-size production computation is Rust-owned", agents)
         self.assertIn("Do not introduce undocumented rule-of-thumb constants", agents)
         self.assertIn("two-or-more-word `snake_case`", agents)
+
+    def test_product_and_technical_docs_reject_as_built_overclaim(self) -> None:
+        """Keep pre-release requirements clearly separate from as-built runtime claims."""
+
+        prd = (REPOSITORY_ROOT / "docs" / "PRD.md").read_text(encoding="utf-8")
+        trd = (REPOSITORY_ROOT / "docs" / "TRD.md").read_text(encoding="utf-8")
+        operability = (REPOSITORY_ROOT / "docs" / "OPERABILITY.md").read_text(encoding="utf-8")
+        self.assertIn("pre-release", prd.lower())
+        self.assertIn("not as-built runtime evidence", trd)
+        self.assertIn("does not ship a network service", operability)
 
 
 if __name__ == "__main__":
