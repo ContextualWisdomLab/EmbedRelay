@@ -9,11 +9,19 @@ EmbedRelay is a leaf product. **Independent deployment and callability are archi
 - LLM routing and provider keys belong in contextual-orchestrator.
 - Document chunking belongs in the ingest or retrieval host, not here.
 
-Allowed composition hubs are naruon and gyeot. Keep those links. Wire hubs through published contracts in the hub's own repository.
+Allowed composition hubs are [`naruon`](https://github.com/ContextualWisdomLab/naruon) and [`gyeot`](https://github.com/ContextualWisdomLab/gyeot). Wire hubs through published contracts in the hub's own repository; do not replace those boundaries with sibling checkouts or shared application persistence.
 
 ## Documentation
 
 Buyer and operator text stays in `README.md`. Architecture decisions stay in `docs/adr/`. Cite only verified sources in `docs/REFERENCES.md`. Do not invent papers, packages, endpoints, or test harnesses that are not in this tree.
+
+## Verification
+
+Documentation contract regressions that have executable tests must stay runnable with the repository's documented toolchain. The current dependency-free Node contract test is:
+
+```bash
+node --test test/conversion-response-contract.test.mjs
+```
 
 ## Pull requests
 
