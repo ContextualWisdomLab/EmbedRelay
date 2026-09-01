@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:contextualwisdomlab:embedrelay:conversion-response:v1",
+  "title": "EmbedRelay conversion response v1",
+  "description": "Pre-release payload contract for EmbedRelay conversion outcomes. An executable HTTP release must publish a matching OpenAPI document.",
+  "oneOf": [
+    { "$ref": "#/$defs/converted" },
+    { "$ref": "#/$defs/abstained" },
+    { "$ref": "#/$defs/error" }
+  ],
+  "$defs": {
+    "spaceId": {
+      "type": "string",
+      "pattern": "^urn:cwl:embed-space:v1:sha256:[0-9a-f]{64}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "adapterArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter_id", "sha256", "policy_id", "decision_receipt_id"],
+      "properties": {
+        "adapter_id": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "policy_id": { "type": "string", "minLength": 1 },
+        "decision_receipt_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "converted": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "request_id",
+        "status",
+        "source_space_id",
+        "target_space_id",
+        "vector_origin",
+        "adapter_artifact",
+        "vector",
+        "abstention"
+      ],
+      "properties": {
+        "schema_version": { "const": 1 },
+        "request_id": { "type": "string", "minLength": 1 },
+        "status": { "const": "converted" },
+        "source_space_id": { "$ref": "#/$defs/spaceId" },
+        "target_space_id": { "$ref": "#/$defs/spaceId" },
+        "vector_origin": { "const": "translated" },
+        "adapter_artifact": { "$ref": "#/$defs/adapterArtifact" },
+        "vector": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "number" }
+        },
+        "abstention": { "type": "null" }
+      }
+    },
+    "abstained": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "request_id",
+        "status",
+        "source_space_id",
+        "target_space_id",
+        "vector_origin",
+        "adapter_artifact",
+        "vector",
+        "abstention"
+      ],
+      "properties": {
+        "schema_version": { "const": 1 },
+        "request_id": { "type": "string", "minLength": 1 },
+        "status": { "const": "abstained" },
+        "source_space_id": { "$ref": "#/$defs/spaceId" },
+        "target_space_id": { "$ref": "#/$defs/spaceId" },
+        "vector_origin": { "type": "null" },
+        "adapter_artifact": {
+          "oneOf": [
+            { "$ref": "#/$defs/adapterArtifact" },
+            { "type": "null" }
+          ]
+        },
+        "vector": { "type": "null" },
+        "abstention": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code"],
+          "properties": {
+            "code": {
+              "enum": [
+                "low_confidence",
+                "out_of_distribution",
+                "policy_hold",
+                "incompatible_space",
+                "no_approved_adapter"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "request_id", "status", "error"],
+      "properties": {
+        "schema_version": { "const": 1 },
+        "request_id": { "type": "string", "minLength": 1 },
+        "status": { "const": "error" },
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "message"],
+          "properties": {
+            "code": {
+              "enum": [
+                "invalid_request",
+                "unauthenticated",
+                "forbidden",
+                "space_not_found",
+                "adapter_not_found",
+                "policy_not_approved",
+                "internal_error"
+              ]
+            },
+            "message": { "type": "string", "minLength": 1, "maxLength": 512 }
+          }
+        }
+      }
+    }
+  }
+}
