@@ -13,6 +13,13 @@ SCHEMA_PATH = REPOSITORY_ROOT / "docs" / "contracts" / "conversion-response-v1.s
 SPACE_PREFIX = "urn:cwl:embed-space:v1:sha256:"
 VALID_DIGEST = "a" * 64
 VALID_SPACE_ID = f"{SPACE_PREFIX}{VALID_DIGEST}"
+CANONICAL_BASELINES = (
+    "AGENTS.md",
+    "CLAUDE.md",
+    "ARCHITECTURE.md",
+    "CHANGELOG.md",
+    "docs/product-technical-gap-baseline.md",
+)
 
 
 def _matches_string_definition(definition: dict[str, object], value: str) -> bool:
@@ -61,6 +68,36 @@ class ConversionResponseSchemaTests(unittest.TestCase):
         self.assertFalse(_matches_string_definition(definition, f"{VALID_DIGEST}\n"))
         self.assertFalse(_matches_string_definition(definition, f"{VALID_DIGEST}\r\n"))
         self.assertFalse(_matches_string_definition(definition, "A" * 64))
+
+
+class CanonicalRepositoryBaselineTests(unittest.TestCase):
+    """Keep commercialization and engineering authority in durable repository files."""
+
+    def test_required_canonical_baselines_exist_and_are_nonempty(self) -> None:
+        """Prevent canonical product/engineering baselines from disappearing silently."""
+
+        for relative_path in CANONICAL_BASELINES:
+            with self.subTest(path=relative_path):
+                path = REPOSITORY_ROOT / relative_path
+                self.assertTrue(path.is_file(), f"missing canonical baseline: {relative_path}")
+                self.assertTrue(path.read_text(encoding="utf-8").strip(), f"empty canonical baseline: {relative_path}")
+
+    def test_documentation_index_links_canonical_product_authority(self) -> None:
+        """Make the canonical architecture and commercialization ledger discoverable."""
+
+        index = (REPOSITORY_ROOT / "docs" / "index.md").read_text(encoding="utf-8")
+        self.assertIn("../ARCHITECTURE.md", index)
+        self.assertIn("product-technical-gap-baseline.md", index)
+        self.assertIn("../AGENTS.md", index)
+        self.assertIn("../CHANGELOG.md", index)
+
+    def test_agent_rules_keep_rust_numerics_and_fail_closed_thresholds(self) -> None:
+        """Guard the production numerical-language and evidence-derived threshold contracts."""
+
+        agents = (REPOSITORY_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("Mathematical/vector/linear-algebra/token-size production computation is Rust-owned", agents)
+        self.assertIn("Do not introduce undocumented rule-of-thumb constants", agents)
+        self.assertIn("two-or-more-word `snake_case`", agents)
 
 
 if __name__ == "__main__":
