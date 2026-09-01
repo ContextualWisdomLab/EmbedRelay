@@ -5,9 +5,13 @@ EmbedRelay is ContextualWisdomLab's embedding-continuity product for governed cr
 ## Start here
 
 - [Repository README](../README.md) — product responsibility, current maturity, integration boundary, and operator principles.
-- [Architecture decision records](adr/README.md) — product authority, embedding-space continuity, and published-contract decisions.
+- [Architecture](../ARCHITECTURE.md) — DDD context map, external authority boundaries, persistence target, security boundary, and executable-release gates.
+- [Product and technical gap baseline](product-technical-gap-baseline.md) — current commercialization gaps, exact-head verification rules, DDD invariants, and ordered next work.
+- [Architecture decision records](adr/README.md) — embedding-space identity, migration governance, contracts, and identity/authorization decisions.
 - [Conversion response contract](contracts/conversion-response-v1.schema.json) — pre-release machine-readable converted, abstained, and error outcomes.
 - [References](REFERENCES.md) — scientific and standards basis used by the design.
+- [Agent development rules](../AGENTS.md) and [development context](../CLAUDE.md) — repository ownership, Rust numerical boundaries, persistence naming, and governance rules.
+- [Changelog](../CHANGELOG.md) — pre-release change history without implying a published artifact.
 - [Contributing](../CONTRIBUTING.md) — contribution and repository-boundary guidance.
 
 ## Current maturity
@@ -16,4 +20,4 @@ EmbedRelay is documentation-first today. This documentation site describes the r
 
 ## Ecosystem boundary
 
-EmbedRelay owns embedding-space identity and migration control. Ranking and retrieval-list evaluation belong to RankWeave; LLM routing and provider credentials belong to contextual-orchestrator; embedding runtimes and vector stores remain behind versioned external ports. Integration is through released contracts rather than sibling checkouts or shared private databases.
+EmbedRelay owns embedding-space identity and migration control. Ranking and retrieval-list evaluation belong to RankWeave; LLM routing and provider credentials belong to contextual-orchestrator; the ContextualWisdomLab identity-provider deployment boundary belongs to keyverse; embedding runtimes and vector stores remain behind versioned external ports. Integration is through released contracts rather than sibling checkouts or shared private databases.
