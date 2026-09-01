@@ -16,6 +16,8 @@ All notable EmbedRelay changes are recorded here. This repository is pre-release
 - Repository `AGENTS.md` and `CLAUDE.md` development boundaries.
 - Root `ARCHITECTURE.md` context map separating EmbedRelay from RankWeave, contextual-orchestrator, keyverse, model providers, vector stores, and ingest/retrieval hosts.
 - `docs/PRD.md` and `docs/TRD.md` buyer/product and Rust-first technical requirements for the first executable migration vertical.
+- `docs/UML.md` target component, conversion-sequence, release-state and domain-type diagrams with explicit non-as-built labeling.
+- `docs/ERD.md` conceptual future 3NF evidence model with tenant-safe references, multiword `snake_case` names, idempotency and measured partition/lock requirements; no current database is claimed.
 - Root `SECURITY.md` trust-boundary/threat baseline, including tenant isolation, space confusion, malformed/OOD vector handling, rollback integrity, credential leakage and supply-chain controls.
 - `docs/TEST_STRATEGY.md` covering numerical/vector, migration, OOD/abstention, tenant, persistence, HTTP, coverage and realistic test-data evidence.
 - `docs/OPERABILITY.md` covering async service lifecycle, Docker/Podman/Colima compatibility, accelerator parity, telemetry, recovery and measured k6/load requirements once a runtime exists.
