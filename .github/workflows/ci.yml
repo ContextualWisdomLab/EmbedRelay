@@ -15,6 +15,20 @@ concurrency:
 jobs:
   rust-contract:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: embedrelay_contract
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d embedrelay_contract"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -28,6 +42,12 @@ jobs:
         run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
       - name: Stable workspace tests
         run: cargo test --workspace --locked
+      - name: PostgreSQL tenant registry contract
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/embedrelay_contract
+        run: |
+          psql --version
+          bash tests/postgres_registry_contract.sh
       - name: Install pinned branch-coverage toolchain
         run: rustup toolchain install nightly-2026-08-01 --profile minimal --component llvm-tools-preview
       - name: Install pinned cargo-llvm-cov
