@@ -27,7 +27,7 @@ jobs:
           EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
       - name: Stable workspace tests
-        run: cargo test --workspace
+        run: cargo test --workspace --locked
       - name: Install pinned branch-coverage toolchain
         run: rustup toolchain install nightly-2026-08-01 --profile minimal --component llvm-tools-preview
       - name: Install pinned cargo-llvm-cov
@@ -36,6 +36,7 @@ jobs:
         run: >-
           cargo +nightly-2026-08-01 llvm-cov
           --workspace
+          --locked
           --branch
           --json
           --summary-only
