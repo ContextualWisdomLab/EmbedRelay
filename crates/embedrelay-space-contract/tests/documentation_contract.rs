@@ -72,6 +72,7 @@ fn canonical_product_architecture_documents_exist() {
         "docs/OPERABILITY.md",
         "docs/TRACEABILITY.md",
         "docs/DOCUMENTATION_FITNESS.md",
+        "docs/product-technical-gap-baseline.md",
         "docs/adr/README.md",
     ];
 
@@ -84,19 +85,31 @@ fn canonical_product_architecture_documents_exist() {
 }
 
 #[test]
-fn conceptual_erd_does_not_claim_postgres_is_implemented() {
+fn m1_postgres_erd_matches_executable_persistence_slice() {
     let erd = read_document("docs/ERD.md");
-    assert!(erd.contains("Current PR #1 persists none of these tables yet"));
-    assert!(erd.contains("not implemented"));
-    assert!(erd.contains("Planned PostgreSQL control-plane ERD"));
+    for required_claim in [
+        "As-built PostgreSQL M1 slice",
+        "tenant_space_registry",
+        "space_registration_audit",
+        "forced RLS",
+        "Broader PostgreSQL control-plane target",
+    ] {
+        assert!(
+            erd.contains(required_claim),
+            "ERD is missing current persistence claim: {required_claim}"
+        );
+    }
+    assert!(!erd.contains("Current PR #1 persists none of these tables yet"));
 }
 
 #[test]
-fn traceability_keeps_planned_migration_components_planned() {
+fn traceability_keeps_future_migration_components_planned() {
     let traceability = read_document("docs/TRACEABILITY.md");
+    assert!(traceability.contains("PostgreSQL tenant RLS/audit"));
+    assert!(traceability.contains("active PR implemented"));
     assert!(traceability.contains("directional role-specific adapters"));
     assert!(traceability.contains("dual-index migration"));
-    assert!(traceability.contains("planned, not current"));
+    assert!(traceability.contains("planned"));
 }
 
 #[test]
@@ -106,7 +119,7 @@ fn documentation_fitness_exposes_conversation_planning_gaps_without_overclaiming
         "Evaluation protocol | **PARTIAL**",
         "Research and standards traceability | **PARTIAL**",
         "Machine-readable API and schema artifacts | **PLANNED**",
-        "Physical PostgreSQL ERD | **NOT-APPLICABLE**",
+        "Physical PostgreSQL ERD | **PRESENT-CURRENT**",
         "Data model | **PRESENT-CURRENT**",
         "Migration runbook | **PRESENT-CURRENT**",
     ] {
@@ -115,7 +128,9 @@ fn documentation_fitness_exposes_conversation_planning_gaps_without_overclaiming
             "documentation fitness is missing required claim: {required_claim}"
         );
     }
-    assert!(fitness.contains("does not make a deployable API or durable PostgreSQL control plane as-built"));
+    assert!(fitness.contains(
+        "does not make a deployable API or the full durable PostgreSQL control plane as-built"
+    ));
 }
 
 #[test]
