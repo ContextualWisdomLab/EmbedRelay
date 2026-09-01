@@ -21,6 +21,8 @@ CANONICAL_BASELINES = (
     "SECURITY.md",
     "docs/PRD.md",
     "docs/TRD.md",
+    "docs/UML.md",
+    "docs/ERD.md",
     "docs/TEST_STRATEGY.md",
     "docs/OPERABILITY.md",
     "docs/product-technical-gap-baseline.md",
@@ -88,7 +90,7 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
                 self.assertTrue(path.read_text(encoding="utf-8").strip(), f"empty canonical baseline: {relative_path}")
 
     def test_documentation_index_links_canonical_product_authority(self) -> None:
-        """Make product, engineering, security, test and operability authority discoverable."""
+        """Make product, engineering, diagrams, security, test and operability authority discoverable."""
 
         index = (REPOSITORY_ROOT / "docs" / "index.md").read_text(encoding="utf-8")
         for required_link in (
@@ -99,6 +101,8 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
             "../SECURITY.md",
             "PRD.md",
             "TRD.md",
+            "UML.md",
+            "ERD.md",
             "TEST_STRATEGY.md",
             "OPERABILITY.md",
         ):
@@ -114,13 +118,17 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
         self.assertIn("two-or-more-word `snake_case`", agents)
 
     def test_product_and_technical_docs_reject_as_built_overclaim(self) -> None:
-        """Keep pre-release requirements clearly separate from as-built runtime claims."""
+        """Keep pre-release requirements and target diagrams separate from as-built runtime claims."""
 
         prd = (REPOSITORY_ROOT / "docs" / "PRD.md").read_text(encoding="utf-8")
         trd = (REPOSITORY_ROOT / "docs" / "TRD.md").read_text(encoding="utf-8")
+        uml = (REPOSITORY_ROOT / "docs" / "UML.md").read_text(encoding="utf-8")
+        erd = (REPOSITORY_ROOT / "docs" / "ERD.md").read_text(encoding="utf-8")
         operability = (REPOSITORY_ROOT / "docs" / "OPERABILITY.md").read_text(encoding="utf-8")
         self.assertIn("pre-release", prd.lower())
         self.assertIn("not as-built runtime evidence", trd)
+        self.assertIn("not as-built runtime evidence", uml)
+        self.assertIn("no current database is claimed", erd.lower())
         self.assertIn("does not ship a network service", operability)
 
 
