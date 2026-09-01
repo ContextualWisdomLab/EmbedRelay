@@ -32,7 +32,7 @@ The public conversion response is a tagged union. Its first executable schema mu
 
 The initial abstention vocabulary is `low_confidence`, `out_of_distribution`, `policy_hold`, `incompatible_space`, and `no_approved_adapter`. The initial error vocabulary is `invalid_request`, `unauthenticated`, `forbidden`, `space_not_found`, `adapter_not_found`, `policy_not_approved`, and `internal_error`. A client must branch on `status` and the typed code; it must never reinterpret abstention as a zero vector, success, or same-space comparison.
 
-Required fields cannot be removed in a minor version. Existing enum meanings cannot be repurposed. Adding an optional backward-compatible field may be minor; adding a required field, removing a field, or changing the meaning of an existing status/code is major. The release OpenAPI/JSON Schema is machine authority; this table is the pre-release design constraint.
+Required fields cannot be removed in a minor version. Existing enum meanings cannot be repurposed. Because the current response objects are closed with `additionalProperties: false`, adding any field to those objects—including an optional field—is a major change. A future minor version may add optional fields only inside an explicitly documented extension object that the already-released schema permits. Removing a field, adding a required field, or changing the meaning of an existing status/code is major. The release OpenAPI/JSON Schema is machine authority; this table is the pre-release design constraint.
 
 ### Trusted tenant and actor handoff
 
