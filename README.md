@@ -1,5 +1,7 @@
 # EmbedRelay
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ContextualWisdomLab/EmbedRelay)
+
 **Change embedding models without treating incompatible vector spaces as interchangeable.**
 
 EmbedRelay is ContextualWisdomLab's embedding-continuity product for governed cross-model vector migration. It is designed for retrieval systems that need to change an embedding model, revision, input role, preprocessing contract, dimension, precision, normalization, or metric without silently corrupting retrieval while a corpus is being migrated.
