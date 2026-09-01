@@ -38,7 +38,7 @@ Transient workflow status is resolved live from GitHub rather than committed as 
 | Security/privacy | Boundary prohibits credentials/provider payloads as domain state | Partial | No threat model, retention/access/export/audit implementation or secret/runtime evidence | Add `SECURITY.md`, threat model and executable misuse/tenant/adversarial tests with the first runtime slice |
 | Operability | Release requirements documented | Missing | No compose deployment, backup/restore, rollback, telemetry or incident evidence | Add deployment/recovery only after runtime/persistence exists; measure rather than invent RPO/RTO |
 | Performance | No executable runtime on this PR | Unevidenced | No load or latency data | Add k6 only once a network API exists; p95 target must be measured on realistic hardware/workload before readiness claim |
-| Documentation quality | README, ADRs, references, contribution guide, `AGENTS.md`, `CLAUDE.md`, architecture, changelog, this ledger | Foundation improved | PRD/TRD/UML/ERD/security/test/operability docs are still incomplete for an executable release | Create them in lockstep with the first runtime/persistence slices, not as unsupported as-built claims |
+| Documentation quality | Canonical README/ADRs/references plus `AGENTS.md`, `CLAUDE.md`, root architecture, changelog and this ledger; `tests/test_documentation_contracts.py`; exact-head `Documentation Quality` workflow | Executable foundation gate | PRD/TRD/UML/ERD/security/test/operability docs remain incomplete for an executable runtime | Require the new exact-head documentation gate to pass; create runtime-specific artifacts in lockstep with implementation rather than fabricating as-built claims |
 | Release/package | Apache-2.0 source/documentation grant; no published package claimed | Missing release | No immutable release, SBOM/provenance/package/container evidence | Establish release artifact identity only after executable exact-head GREEN and governance satisfaction |
 
 ## DDD context map
@@ -120,7 +120,7 @@ A first executable commercial release is not ready until all of the following ar
 
 ## Active gap order
 
-1. Integrate the documentation/contract foundation through the normal protected path after fresh exact-head review/check evidence.
+1. Integrate the documentation/contract foundation through the normal protected path after fresh exact-head review/check evidence, including the repository-local documentation contract gate.
 2. Add the smallest Rust-first `EmbeddingSpaceIdentity` and fail-closed vector-compatibility slice with RED-first tests and cross-language canonicalization fixtures.
 3. Define a versioned migration policy/evaluation receipt and calibrated abstention contract without heuristic thresholds.
 4. Implement the directional conversion kernel and compare against target-native embeddings/retrieval evaluation; use RankWeave for ranking/statistical comparison.
