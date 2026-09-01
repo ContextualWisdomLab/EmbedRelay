@@ -5,8 +5,13 @@ EmbedRelay is ContextualWisdomLab's embedding-continuity product for governed cr
 ## Start here
 
 - [Repository README](../README.md) — product responsibility, current maturity, integration boundary, and operator principles.
+- [Product requirements](PRD.md) — buyer jobs, first executable vertical, functional/non-functional requirements, and success evidence.
+- [Technical requirements](TRD.md) — Rust-first module/runtime shape, numerical/evaluation/service/persistence requirements, and verification boundary.
 - [Architecture](../ARCHITECTURE.md) — DDD context map, external authority boundaries, persistence target, security boundary, and executable-release gates.
 - [Product and technical gap baseline](product-technical-gap-baseline.md) — current commercialization gaps, exact-head verification rules, DDD invariants, and ordered next work.
+- [Security baseline](../SECURITY.md) — trust boundaries, threats, tenant isolation, sensitive evidence, supply-chain controls, and compliance posture.
+- [Test strategy](TEST_STRATEGY.md) — current documentation gate and first-runtime numerical, migration, tenant, persistence, HTTP, coverage, and test-data acceptance.
+- [Operability baseline](OPERABILITY.md) — service lifecycle, compose/container expectations, accelerator handling, telemetry, recovery, and performance/load gates.
 - [Architecture decision records](adr/README.md) — embedding-space identity, migration governance, contracts, and identity/authorization decisions.
 - [Conversion response contract](contracts/conversion-response-v1.schema.json) — pre-release machine-readable converted, abstained, and error outcomes.
 - [References](REFERENCES.md) — scientific and standards basis used by the design.
