@@ -20,7 +20,7 @@ erDiagram
     adapter_revision_record ||--o{ migration_evaluation_run : evaluates
     migration_policy_revision ||--o{ migration_evaluation_run : governs
     migration_evaluation_run ||--o| release_admission_record : supports
-    adapter_revision_record ||--o{ conversion_receipt_record : produces
+    adapter_revision_record o|--o{ conversion_receipt_record : may_support
     release_admission_record ||--o{ rollback_receipt_record : may_rollback
 
     tenant_partition {
@@ -74,7 +74,7 @@ erDiagram
     conversion_receipt_record {
         uuid conversion_receipt_record_id PK
         uuid tenant_partition_id FK
-        uuid adapter_revision_record_id FK
+        uuid adapter_revision_record_id FK "nullable before adapter resolution"
         text conversion_status
         text source_vector_reference
         text target_vector_reference
@@ -109,6 +109,7 @@ erDiagram
 - `adapter_revision_record` references source/target spaces instead of duplicating their material fields.
 - `migration_evaluation_run` references one adapter and one policy revision; dataset identities are immutable external evidence references, not copied datasets.
 - `conversion_receipt_record` stores bounded evidence/reference metadata; vector bytes remain with the owning runtime/vector store unless a future approved requirement establishes a separate encrypted evidence store.
+- `conversion_receipt_record.adapter_revision_record_id` is nullable because an `error` outcome can occur before adapter selection. A `converted` receipt requires a non-null adapter reference. An `abstained` receipt may carry one only when an adapter was resolved before the abstention decision. Status-specific database checks must enforce these combinations rather than making every outcome depend on an adapter.
 - release and rollback records are completed facts and therefore append-only after acceptance.
 
 ## Tenant isolation

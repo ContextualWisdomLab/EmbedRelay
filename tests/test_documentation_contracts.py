@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import unittest
 from copy import deepcopy
@@ -18,6 +19,26 @@ VECTOR_SCHEMA_PREFIX = "urn:cwl:embed-vector-schema:v1:sha256:"
 VALID_DIGEST = "a" * 64
 VALID_SPACE_ID = f"{SPACE_PREFIX}{VALID_DIGEST}"
 VALID_VECTOR_SCHEMA_ID = f"{VECTOR_SCHEMA_PREFIX}{'c' * 64}"
+SUPPORTED_VALIDATOR_KEYWORDS = {
+    "$schema",
+    "$id",
+    "$defs",
+    "$ref",
+    "title",
+    "description",
+    "oneOf",
+    "type",
+    "const",
+    "enum",
+    "minLength",
+    "maxLength",
+    "pattern",
+    "minItems",
+    "items",
+    "required",
+    "properties",
+    "additionalProperties",
+}
 CANONICAL_BASELINES = (
     "AGENTS.md",
     "CLAUDE.md",
@@ -75,7 +96,11 @@ def _type_matches(expected: str, value: Any) -> bool:
     if expected == "string":
         return isinstance(value, str)
     if expected == "number":
-        return isinstance(value, (int, float)) and not isinstance(value, bool)
+        return (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and math.isfinite(float(value))
+        )
     if expected == "integer":
         return isinstance(value, int) and not isinstance(value, bool)
     if expected == "null":
@@ -87,6 +112,10 @@ def _type_matches(expected: str, value: Any) -> bool:
 
 def _schema_errors(root_schema: dict[str, Any], schema: dict[str, Any], value: Any, path: str = "$") -> list[str]:
     """Validate the finite JSON Schema subset used by conversion-response-v1."""
+
+    unsupported = sorted(set(schema) - SUPPORTED_VALIDATOR_KEYWORDS)
+    if unsupported:
+        raise AssertionError(f"{path}: unsupported JSON Schema keywords: {unsupported}")
 
     if "$ref" in schema:
         return _schema_errors(root_schema, _resolve_local_ref(root_schema, schema["$ref"]), value, path)
@@ -264,9 +293,16 @@ class ConversionResponseSchemaTests(unittest.TestCase):
         self.assertContractInvalid(nested)
 
     def test_malformed_vectors_are_rejected(self) -> None:
-        """Reject empty, non-array and non-numeric converted vectors."""
+        """Reject empty, non-array, non-numeric, and non-finite converted vectors."""
 
-        for vector in ([], "not-a-vector", [0.25, "bad"]):
+        for vector in (
+            [],
+            "not-a-vector",
+            [0.25, "bad"],
+            [0.25, math.nan],
+            [math.inf],
+            [-math.inf],
+        ):
             with self.subTest(vector=vector):
                 value = _valid_converted()
                 value["vector"] = vector
@@ -286,6 +322,14 @@ class ConversionResponseSchemaTests(unittest.TestCase):
         invalid_abstention = _valid_abstained()
         invalid_abstention["abstention"] = {"code": "guess_anyway"}
         self.assertContractInvalid(invalid_abstention)
+
+    def test_unsupported_schema_keyword_fails_closed(self) -> None:
+        """Never let a newly added schema constraint escape the local validator silently."""
+
+        schema = deepcopy(self.schema)
+        schema["$defs"]["converted"]["properties"]["vector"]["maxItems"] = 3
+        with self.assertRaisesRegex(AssertionError, "unsupported JSON Schema keywords"):
+            _schema_errors(schema, schema, _valid_converted())
 
 
 class CanonicalRepositoryBaselineTests(unittest.TestCase):

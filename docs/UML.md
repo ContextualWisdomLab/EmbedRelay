@@ -70,6 +70,8 @@ sequenceDiagram
     end
 ```
 
+An `error` may occur before adapter selection and therefore does not require an adapter identity. A `converted` outcome is adapter-bound; an `abstained` outcome may be adapter-bound only when the adapter was resolved before abstention.
+
 ## Migration-release state model
 
 ```mermaid
@@ -118,7 +120,7 @@ classDiagram
       +status
       +source_space_id
       +target_space_id
-      +adapter_revision_id
+      +adapter_revision_id?
       +vector_origin
       +abstention_reason
       +error_code
@@ -147,7 +149,7 @@ classDiagram
     }
 
     EmbeddingSpaceIdentity "1" --> "*" DirectionalAdapterRevision : source/target
-    DirectionalAdapterRevision "1" --> "*" ConversionReceipt : produces evidence
+    DirectionalAdapterRevision "0..1" --> "0..*" ConversionReceipt : may support
     MigrationPolicyRevision "1" --> "*" MigrationEvaluationRun : evaluates under
     DirectionalAdapterRevision "1" --> "*" MigrationEvaluationRun : evaluated
     MigrationEvaluationRun "1..*" --> "0..1" MigrationRelease : admits
