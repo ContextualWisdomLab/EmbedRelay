@@ -31,10 +31,10 @@ trap cleanup EXIT
 # tenant-isolated registrations so the backup must preserve both data and RLS.
 first_tenant="017f22e2-79b0-7cc3-98c4-dc0c0c0c0750"
 first_actor="017f22e2-79b0-7cc3-98c4-dc0c0c0c0751"
-first_fingerprint="$(printf 'd%.0s' {1..64})"
+first_fingerprint="sha256:$(printf 'd%.0s' {1..64})"
 second_tenant="017f22e2-79b0-7cc3-98c4-dc0c0c0c0752"
 second_actor="017f22e2-79b0-7cc3-98c4-dc0c0c0c0753"
-second_fingerprint="$(printf 'e%.0s' {1..64})"
+second_fingerprint="sha256:$(printf 'e%.0s' {1..64})"
 outsider_tenant="017f22e2-79b0-7cc3-98c4-dc0c0c0c0754"
 
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<SQL
