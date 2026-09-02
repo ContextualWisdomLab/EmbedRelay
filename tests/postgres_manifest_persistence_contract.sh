@@ -3,8 +3,17 @@ set -euo pipefail
 
 : "${DATABASE_URL:?DATABASE_URL must point at the PostgreSQL 18.6 test database}"
 
+UP_MIGRATION="migrations/0002_embedding_space_manifest.up.sql"
+DOWN_MIGRATION="migrations/0002_embedding_space_manifest.down.sql"
 manifest_table="embedrelay_registry.embedding_space_manifest"
 manifest_function="embedrelay_registry.register_tenant_space_manifest(uuid,text,jsonb)"
+
+if [[ ! -f "$UP_MIGRATION" || ! -f "$DOWN_MIGRATION" ]]; then
+  echo "canonical manifest persistence migrations are required" >&2
+  exit 1
+fi
+
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$UP_MIGRATION"
 
 if [[ "$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc "SELECT to_regclass('${manifest_table}') IS NOT NULL;")" != "t" ]]; then
   echo "full canonical manifest persistence table is required" >&2
@@ -16,7 +25,7 @@ if [[ "$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc "SELECT to_regprocedure('$
 fi
 
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
-GRANT SELECT, UPDATE, DELETE, TRUNCATE
+GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE
   ON embedrelay_registry.embedding_space_manifest
   TO embedrelay_test_client;
 GRANT EXECUTE
@@ -196,3 +205,44 @@ END
 $$;
 ROLLBACK;
 SQL
+
+rollback_log="$(mktemp)"
+trap 'rm -f "$rollback_log"' EXIT
+if psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$DOWN_MIGRATION" >"$rollback_log" 2>&1; then
+  echo "manifest persistence rollback unexpectedly succeeded without explicit opt-in" >&2
+  exit 1
+fi
+
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<SQL
+SELECT set_config('embedrelay.allow_destructive_rollback', 'on', false);
+\i ${DOWN_MIGRATION}
+DO \$\$
+BEGIN
+  IF to_regclass('${manifest_table}') IS NOT NULL THEN
+    RAISE EXCEPTION 'manifest rollback must remove the canonical manifest table';
+  END IF;
+  IF to_regprocedure('${manifest_function}') IS NOT NULL THEN
+    RAISE EXCEPTION 'manifest rollback must remove the manifest registration function';
+  END IF;
+  IF to_regclass('embedrelay_registry.tenant_space_registry') IS NULL THEN
+    RAISE EXCEPTION 'manifest rollback must preserve the M1 tenant registry';
+  END IF;
+END
+\$\$;
+SQL
+
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$UP_MIGRATION"
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE
+  ON embedrelay_registry.embedding_space_manifest
+  TO embedrelay_test_client;
+GRANT EXECUTE
+  ON FUNCTION embedrelay_registry.register_tenant_space_manifest(uuid, text, jsonb)
+  TO embedrelay_test_client;
+SQL
+
+reapplied="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc "SELECT to_regclass('${manifest_table}') IS NOT NULL AND to_regprocedure('${manifest_function}') IS NOT NULL;")"
+if [[ "$reapplied" != "t" ]]; then
+  echo "re-applied manifest migration did not restore the full persistence contract" >&2
+  exit 1
+fi
