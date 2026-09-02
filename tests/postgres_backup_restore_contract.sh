@@ -27,34 +27,58 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# The registry contract runs first and leaves the up migration reapplied. Seed one
-# immutable tenant-space registration whose exact identities must survive restore.
-source_tenant="017f22e2-79b0-7cc3-98c4-dc0c0c0c0750"
-source_actor="017f22e2-79b0-7cc3-98c4-dc0c0c0c0751"
-source_fingerprint="$(printf 'd%.0s' {1..64})"
+# The registry contract runs first and leaves the up migration reapplied. Seed two
+# tenant-isolated registrations so the backup must preserve both data and RLS.
+first_tenant="017f22e2-79b0-7cc3-98c4-dc0c0c0c0750"
+first_actor="017f22e2-79b0-7cc3-98c4-dc0c0c0c0751"
+first_fingerprint="$(printf 'd%.0s' {1..64})"
+second_tenant="017f22e2-79b0-7cc3-98c4-dc0c0c0c0752"
+second_actor="017f22e2-79b0-7cc3-98c4-dc0c0c0c0753"
+second_fingerprint="$(printf 'e%.0s' {1..64})"
+outsider_tenant="017f22e2-79b0-7cc3-98c4-dc0c0c0c0754"
 
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<SQL
-SELECT set_config('embedrelay.tenant_id', '${source_tenant}', false);
+SELECT set_config('embedrelay.tenant_id', '${first_tenant}', false);
 SELECT embedrelay_registry.register_tenant_space(
-  '${source_actor}'::uuid,
-  '${source_fingerprint}'
+  '${first_actor}'::uuid,
+  '${first_fingerprint}'
+);
+SELECT set_config('embedrelay.tenant_id', '${second_tenant}', false);
+SELECT embedrelay_registry.register_tenant_space(
+  '${second_actor}'::uuid,
+  '${second_fingerprint}'
 );
 SQL
 
-original_registry_id="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc \
-  "SELECT tenant_space_record_id FROM embedrelay_registry.tenant_space_registry WHERE tenant_id='${source_tenant}'::uuid AND space_fingerprint='${source_fingerprint}';")"
-original_audit_id="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc \
-  "SELECT audit_event_id FROM embedrelay_registry.space_registration_audit WHERE tenant_id='${source_tenant}'::uuid AND space_fingerprint='${source_fingerprint}';")"
+first_registry_id="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc \
+  "SELECT tenant_space_record_id FROM embedrelay_registry.tenant_space_registry WHERE tenant_id='${first_tenant}'::uuid AND space_fingerprint='${first_fingerprint}';")"
+first_audit_id="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc \
+  "SELECT audit_event_id FROM embedrelay_registry.space_registration_audit WHERE tenant_id='${first_tenant}'::uuid AND space_fingerprint='${first_fingerprint}';")"
+second_registry_id="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc \
+  "SELECT tenant_space_record_id FROM embedrelay_registry.tenant_space_registry WHERE tenant_id='${second_tenant}'::uuid AND space_fingerprint='${second_fingerprint}';")"
+second_audit_id="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc \
+  "SELECT audit_event_id FROM embedrelay_registry.space_registration_audit WHERE tenant_id='${second_tenant}'::uuid AND space_fingerprint='${second_fingerprint}';")"
 
-if [[ -z "$original_registry_id" || -z "$original_audit_id" ]]; then
-  echo "backup acceptance fixture did not create durable registry and audit identities" >&2
+for identity in "$first_registry_id" "$first_audit_id" "$second_registry_id" "$second_audit_id"; do
+  if [[ -z "$identity" ]]; then
+    echo "backup acceptance fixture did not create all durable registry/audit identities" >&2
+    exit 1
+  fi
+done
+
+source_counts="$(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -tAc \
+  "SELECT (SELECT count(*) FROM embedrelay_registry.tenant_space_registry)::text || ':' || (SELECT count(*) FROM embedrelay_registry.space_registration_audit)::text;")"
+if [[ "$source_counts" != "2:2" ]]; then
+  echo "backup source must contain exactly two registry and two audit rows; got $source_counts" >&2
   exit 1
 fi
 
+# Keep ACLs in the dump. The prior registry contract deliberately provisions the
+# cluster-level embedrelay_test_client role and grants the schema/table/function
+# privileges that a restored database must retain.
 pg_dump "$DATABASE_URL" \
   --format=custom \
   --no-owner \
-  --no-privileges \
   --file="$backup_path"
 
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
@@ -65,26 +89,36 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
 pg_restore \
   --exit-on-error \
   --no-owner \
-  --no-privileges \
   --dbname="$restore_url" \
   "$backup_path"
 
-restored_registry_id="$(psql "$restore_url" -v ON_ERROR_STOP=1 -tAc \
-  "SELECT tenant_space_record_id FROM embedrelay_registry.tenant_space_registry WHERE tenant_id='${source_tenant}'::uuid AND space_fingerprint='${source_fingerprint}';")"
-restored_audit_id="$(psql "$restore_url" -v ON_ERROR_STOP=1 -tAc \
-  "SELECT audit_event_id FROM embedrelay_registry.space_registration_audit WHERE tenant_id='${source_tenant}'::uuid AND space_fingerprint='${source_fingerprint}';")"
+restored_first_registry_id="$(psql "$restore_url" -v ON_ERROR_STOP=1 -tAc \
+  "SELECT tenant_space_record_id FROM embedrelay_registry.tenant_space_registry WHERE tenant_id='${first_tenant}'::uuid AND space_fingerprint='${first_fingerprint}';")"
+restored_first_audit_id="$(psql "$restore_url" -v ON_ERROR_STOP=1 -tAc \
+  "SELECT audit_event_id FROM embedrelay_registry.space_registration_audit WHERE tenant_id='${first_tenant}'::uuid AND space_fingerprint='${first_fingerprint}';")"
+restored_second_registry_id="$(psql "$restore_url" -v ON_ERROR_STOP=1 -tAc \
+  "SELECT tenant_space_record_id FROM embedrelay_registry.tenant_space_registry WHERE tenant_id='${second_tenant}'::uuid AND space_fingerprint='${second_fingerprint}';")"
+restored_second_audit_id="$(psql "$restore_url" -v ON_ERROR_STOP=1 -tAc \
+  "SELECT audit_event_id FROM embedrelay_registry.space_registration_audit WHERE tenant_id='${second_tenant}'::uuid AND space_fingerprint='${second_fingerprint}';")"
 
-if [[ "$restored_registry_id" != "$original_registry_id" ]]; then
-  echo "restored tenant registry identity differs from the backed-up identity" >&2
+if [[ "$restored_first_registry_id" != "$first_registry_id" || "$restored_first_audit_id" != "$first_audit_id" ]]; then
+  echo "first tenant restored identities differ from backed-up identities" >&2
   exit 1
 fi
-if [[ "$restored_audit_id" != "$original_audit_id" ]]; then
-  echo "restored audit identity differs from the backed-up identity" >&2
+if [[ "$restored_second_registry_id" != "$second_registry_id" || "$restored_second_audit_id" != "$second_audit_id" ]]; then
+  echo "second tenant restored identities differ from backed-up identities" >&2
   exit 1
 fi
 
-psql "$restore_url" -v ON_ERROR_STOP=1 <<'SQL'
-DO $$
+restored_counts="$(psql "$restore_url" -v ON_ERROR_STOP=1 -tAc \
+  "SELECT (SELECT count(*) FROM embedrelay_registry.tenant_space_registry)::text || ':' || (SELECT count(*) FROM embedrelay_registry.space_registration_audit)::text;")"
+if [[ "$restored_counts" != "$source_counts" ]]; then
+  echo "restored registry/audit counts differ from backup source: source=$source_counts restored=$restored_counts" >&2
+  exit 1
+fi
+
+psql "$restore_url" -v ON_ERROR_STOP=1 <<SQL
+DO \$\$
 DECLARE
   registry_rls boolean;
   registry_forced boolean;
@@ -122,38 +156,30 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'restored audit append-only trigger is missing or disabled';
   END IF;
-END
-$$;
 
-DO $create_role$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'embedrelay_restore_client') THEN
-    CREATE ROLE embedrelay_restore_client NOLOGIN;
+  IF obj_description('embedrelay_registry.tenant_space_registry'::regclass, 'pg_class') IS NULL
+     OR obj_description('embedrelay_registry.space_registration_audit'::regclass, 'pg_class') IS NULL THEN
+    RAISE EXCEPTION 'restored registry/audit table comments must survive backup restore';
+  END IF;
+
+  IF NOT has_schema_privilege('embedrelay_test_client', 'embedrelay_registry', 'USAGE')
+     OR NOT has_table_privilege('embedrelay_test_client', 'embedrelay_registry.tenant_space_registry', 'SELECT')
+     OR NOT has_table_privilege('embedrelay_test_client', 'embedrelay_registry.space_registration_audit', 'SELECT')
+     OR NOT has_function_privilege('embedrelay_test_client', 'embedrelay_registry.register_tenant_space(uuid,text)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'restored application-role privileges differ from the backed-up contract database';
   END IF;
 END
-$create_role$;
-ALTER ROLE embedrelay_restore_client
-  NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS;
-REVOKE ALL PRIVILEGES ON SCHEMA embedrelay_registry FROM embedrelay_restore_client;
-REVOKE ALL PRIVILEGES
-  ON embedrelay_registry.tenant_space_registry,
-     embedrelay_registry.space_registration_audit
-  FROM embedrelay_restore_client;
-GRANT USAGE ON SCHEMA embedrelay_registry TO embedrelay_restore_client;
-GRANT SELECT, UPDATE, DELETE
-  ON embedrelay_registry.tenant_space_registry,
-     embedrelay_registry.space_registration_audit
-  TO embedrelay_restore_client;
+\$\$;
 
-SET ROLE embedrelay_restore_client;
-SELECT set_config('embedrelay.tenant_id', '017f22e2-79b0-7cc3-98c4-dc0c0c0c0750', false);
-DO $$
+SET ROLE embedrelay_test_client;
+SELECT set_config('embedrelay.tenant_id', '${first_tenant}', false);
+DO \$\$
 BEGIN
   IF (SELECT count(*) FROM embedrelay_registry.tenant_space_registry) <> 1 THEN
-    RAISE EXCEPTION 'restored tenant must see exactly its durable registry row';
+    RAISE EXCEPTION 'first restored tenant must see exactly one registry row';
   END IF;
   IF (SELECT count(*) FROM embedrelay_registry.space_registration_audit) <> 1 THEN
-    RAISE EXCEPTION 'restored tenant must see exactly its durable audit row';
+    RAISE EXCEPTION 'first restored tenant must see exactly one audit row';
   END IF;
 
   BEGIN
@@ -163,11 +189,31 @@ BEGIN
   EXCEPTION
     WHEN SQLSTATE '55000' THEN NULL;
   END;
-END
-$$;
 
-SELECT set_config('embedrelay.tenant_id', '017f22e2-79b0-7cc3-98c4-dc0c0c0c0752', false);
-DO $$
+  BEGIN
+    UPDATE embedrelay_registry.space_registration_audit
+       SET action_code = action_code;
+    RAISE EXCEPTION 'restored append-only audit unexpectedly allowed update';
+  EXCEPTION
+    WHEN SQLSTATE '55000' THEN NULL;
+  END;
+END
+\$\$;
+
+SELECT set_config('embedrelay.tenant_id', '${second_tenant}', false);
+DO \$\$
+BEGIN
+  IF (SELECT count(*) FROM embedrelay_registry.tenant_space_registry) <> 1 THEN
+    RAISE EXCEPTION 'second restored tenant must see exactly one registry row';
+  END IF;
+  IF (SELECT count(*) FROM embedrelay_registry.space_registration_audit) <> 1 THEN
+    RAISE EXCEPTION 'second restored tenant must see exactly one audit row';
+  END IF;
+END
+\$\$;
+
+SELECT set_config('embedrelay.tenant_id', '${outsider_tenant}', false);
+DO \$\$
 BEGIN
   IF (SELECT count(*) FROM embedrelay_registry.tenant_space_registry) <> 0 THEN
     RAISE EXCEPTION 'restored RLS leaked another tenant registry row';
@@ -176,9 +222,15 @@ BEGIN
     RAISE EXCEPTION 'restored RLS leaked another tenant audit row';
   END IF;
 END
-$$;
+\$\$;
 RESET ROLE;
 SQL
 
-printf 'PostgreSQL backup/restore acceptance passed: registry=%s audit=%s\n' \
-  "$restored_registry_id" "$restored_audit_id"
+backup_bytes="$(wc -c < "$backup_path" | tr -d ' ')"
+if [[ "$backup_bytes" -le 0 ]]; then
+  echo "backup artifact is empty" >&2
+  exit 1
+fi
+
+printf 'PostgreSQL backup/restore acceptance passed: rows=%s backup_bytes=%s first_registry=%s second_registry=%s\n' \
+  "$restored_counts" "$backup_bytes" "$restored_first_registry_id" "$restored_second_registry_id"
