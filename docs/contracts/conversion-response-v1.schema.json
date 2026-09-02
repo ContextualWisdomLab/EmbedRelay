@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:contextualwisdomlab:embedrelay:conversion-response:v1",
   "title": "EmbedRelay conversion response v1",
-  "description": "Pre-release payload contract for EmbedRelay conversion outcomes. An executable HTTP release must publish a matching OpenAPI document.",
+  "description": "Pre-release payload envelope for EmbedRelay conversion outcomes. Converted vectors MUST also validate against the immutable target_vector_schema_id resolved for target_space_id; this generic envelope does not replace the space-specific exact-dimension schema. An executable HTTP release must publish a matching OpenAPI document.",
   "oneOf": [
     { "$ref": "#/$defs/converted" },
     { "$ref": "#/$defs/abstained" },
@@ -14,6 +14,12 @@
       "minLength": 94,
       "maxLength": 94,
       "pattern": "^urn:cwl:embed-space:v1:sha256:[0-9a-f]{64}$"
+    },
+    "vectorSchemaId": {
+      "type": "string",
+      "minLength": 102,
+      "maxLength": 102,
+      "pattern": "^urn:cwl:embed-vector-schema:v1:sha256:[0-9a-f]{64}$"
     },
     "sha256": {
       "type": "string",
@@ -41,6 +47,7 @@
         "status",
         "source_space_id",
         "target_space_id",
+        "target_vector_schema_id",
         "vector_origin",
         "adapter_artifact",
         "vector",
@@ -52,12 +59,14 @@
         "status": { "const": "converted" },
         "source_space_id": { "$ref": "#/$defs/spaceId" },
         "target_space_id": { "$ref": "#/$defs/spaceId" },
+        "target_vector_schema_id": { "$ref": "#/$defs/vectorSchemaId" },
         "vector_origin": { "const": "translated" },
         "adapter_artifact": { "$ref": "#/$defs/adapterArtifact" },
         "vector": {
           "type": "array",
           "minItems": 1,
-          "items": { "type": "number" }
+          "items": { "type": "number" },
+          "description": "JSON finite-number array. Exact length is enforced by the immutable target_vector_schema_id for target_space_id before the response is accepted. NaN and infinity are not valid JSON values and must be rejected by serialization/runtime validation."
         },
         "abstention": { "type": "null" }
       }
