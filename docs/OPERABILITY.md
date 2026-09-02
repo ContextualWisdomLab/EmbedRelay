@@ -1,6 +1,6 @@
 # EmbedRelay Operability and Migration Runbook
 
-**Status:** Accepted target operating baseline; PR #1 now has a narrow executable PostgreSQL M1 slice but is not deployable M1 completion.  
+**Status:** Accepted target operating baseline; PR #1 has a narrow executable PostgreSQL M1 slice but is not deployable M1 completion.  
 **Last reviewed:** 2026-09-02
 
 ## Operating principles
@@ -11,7 +11,7 @@
 - Prefer reversible staged migration over all-at-once cutover.
 - Native target backfill is the desired terminal state where feasible.
 - Numerical/retrieval evidence and tenant/security controls are release gates, not dashboards after the fact.
-- Treat a migration rollback test and a data backup/restore test as different evidence; neither substitutes for the other.
+- Treat migration rollback and durable data backup/restore as separate evidence surfaces.
 
 ## Migration runbook
 
@@ -29,25 +29,32 @@
 12. **Retain source** through the rollback window.
 13. **Complete** only when terminal-state/native and audit/reconciliation criteria are met.
 
-Only steps related to M1 space registration have executable persistence today; adapter, routing, canary, and backfill stages remain future product surfaces.
+Only M1 space-registration persistence has executable source today; adapter, routing, canary, and backfill stages remain future product surfaces.
 
 ## Current PostgreSQL M1 operating boundary
 
-The active PR contains `migrations/0001_tenant_space_registry.up.sql` and `.down.sql` plus `tests/postgres_registry_contract.sh`. Exact-head CI provisions PostgreSQL 18.6 and verifies the physical M1 tenant registry boundary.
+The active PR contains `migrations/0001_tenant_space_registry.up.sql` and `.down.sql`, `tests/postgres_registry_contract.sh`, and `tests/postgres_backup_restore_contract.sh`. Exact-head CI provisions PostgreSQL 18.6 and is configured to verify both the physical registry boundary and disposable backup/restore acceptance.
 
-Current supported evidence:
+Current source-level acceptance includes:
 
 - apply the up migration to an empty M1 contract database;
 - operate under a deliberately granted non-superuser/non-`BYPASSRLS` role;
 - require explicit `embedrelay.tenant_id` context;
-- register one canonical tenant/fingerprint item transactionally with audit intent inserted first;
+- register canonical tenant/fingerprint items transactionally with audit intent inserted first;
 - reject noncanonical fingerprints;
 - deny cross-tenant insertion and hide another tenant's rows;
 - reject registry/audit `UPDATE`, `DELETE`, and `TRUNCATE` operations;
 - race two identical registration attempts and require exactly one committed registry row plus one audit event;
 - reject destructive rollback without explicit `embedrelay.allow_destructive_rollback=on`;
 - perform the opted-in destructive rollback in the disposable test environment;
-- reapply the up migration and verify the registry relation exists.
+- reapply the up migration and verify the registry relation exists;
+- seed two tenant-isolated registry/audit pairs, create a custom-format `pg_dump`, restore it into a fresh database, and reconcile exact registry/audit UUID identities and row counts;
+- verify enabled + forced RLS, append-only triggers, schema/table comments, and application-role schema/table/function privileges survive restore;
+- verify both restored tenants see exactly their own registry/audit row while an outsider sees none;
+- verify restored append-only registry/audit mutation protection still fails closed;
+- record backup artifact byte size plus measured dump/restore durations as fixture evidence without treating the fixture as a production RTO/RPO claim.
+
+These source-level contracts become operational evidence only after the current exact-head CI actually executes successfully. Queued/pending/predecessor runs are not passing evidence.
 
 This is not a general production database administration procedure. The current M1 migration does not create complete canonical-manifest, adapter, evaluation, migration, routing, backfill, or vector-reference persistence.
 
@@ -57,21 +64,26 @@ The current database registration command is **not an UPSERT**. The item-level c
 
 If a future service API needs replay-safe idempotency, it must add a stable request/idempotency key and define replay, mismatch, expiry, and audit behavior explicitly before implementation.
 
-The database transaction can recover from a failed registration attempt by rolling back both audit and registry writes. The guarded down migration can remove the entire M1 schema in a disposable/rehearsal context. Neither mechanism is evidence of backup restore, PITR, RPO, or RTO.
+The database transaction can recover from a failed registration attempt by rolling back both audit and registry writes. The guarded down migration can remove the entire M1 schema in a disposable/rehearsal context. The new backup/restore contract exercises logical durable-data recovery into a fresh database; it does not prove point-in-time recovery, high availability, production-scale recovery, or a committed RPO/RTO.
 
-## Backup and restore gap
+## Backup and restore acceptance
 
-Before calling the persisted M1 boundary production-recoverable, a disposable exact-head acceptance must prove at minimum:
+`tests/postgres_backup_restore_contract.sh` is the current disposable logical-recovery acceptance candidate. It deliberately uses anonymous/opaque UUID fixtures and generated fingerprints rather than production vectors or PII.
 
-- a backup artifact is created from a database containing multiple tenant registrations and audits;
-- restore into a fresh database succeeds using documented supported tooling;
-- table constraints, functions, forced RLS policies, append-only triggers, privileges, and schema comments survive restore;
-- tenant isolation still holds under a non-`BYPASSRLS` role after restore;
-- row counts and tenant/fingerprint/audit referential relationships reconcile exactly;
-- no backup artifact, log, or test fixture introduces production vector/PII data;
-- measured duration and artifact size are recorded as evidence, without pretending that one fixture defines production RTO/RPO.
+A current-head GREEN run must prove:
 
-PITR and production-scale recovery remain separate future acceptance surfaces if the deployment architecture requires them.
+- two tenant registrations and their audit events are captured in the backup;
+- a custom-format logical backup artifact is non-empty;
+- restore into a newly created database succeeds;
+- exact registry/audit UUID identities and total row counts reconcile with the source database;
+- table constraints/functions, forced RLS policies, append-only triggers, application-role privileges, and schema/table comments remain present after restore;
+- tenant isolation still holds under the non-`BYPASSRLS` contract role after restore;
+- restored registry and audit rows remain append-only;
+- backup size and dump/restore duration are emitted as fixture evidence.
+
+The durations and artifact size from this tiny CI fixture characterize only that fixture. They are not production RTO/RPO, capacity, or durability claims.
+
+PITR, WAL archiving, cross-host/object-store backup transport, encryption/key rotation, failover, and production-scale recovery remain separate future acceptance surfaces when deployment architecture requires them.
 
 ## Key SLIs
 
@@ -110,8 +122,8 @@ For the current registry tables, no partitioning or read/write split is assumed.
 
 Classify the first failing boundary: space identity, vector validation, tenant policy, audit/persistence, migration/restore, anchor evidence, adapter fitting, evaluation/calibration, artifact integrity, provider, vector store, router/fusion, migration state, backfill, or release pipeline. Fix the owning layer and add a regression; do not hide an upstream compatibility defect with downstream reranking.
 
-The central GitHub Dependency Review 403 incident is tracked in `ContextualWisdomLab/.github#810`; when reproduced on an exact public non-fork head it is a shared control-plane evidence failure, not a reason to weaken EmbedRelay repository protection.
+The central GitHub Dependency Review availability incident is tracked in `ContextualWisdomLab/.github#810`; when reproduced on an exact public non-fork head it is a shared control-plane evidence failure, not a reason to weaken EmbedRelay repository protection.
 
 ## Release and rollback artifacts
 
-A release-ready build includes applicable migrations + guarded rollback, measured backup/restore evidence for persisted production surfaces, API/schema versions, CHANGELOG/version, locked/reproducible dependency resolution, SBOM/provenance, artifact digests/signatures where used, exact coverage/security/PostgreSQL/review evidence, retrieval evaluation summary for adapter/migration features, SLO/capacity notes, and recovery instructions.
+A release-ready build includes applicable migrations + guarded rollback, current-head measured backup/restore evidence for persisted production surfaces, API/schema versions, CHANGELOG/version, locked/reproducible dependency resolution, SBOM/provenance, artifact digests/signatures where used, exact coverage/security/PostgreSQL/review evidence, retrieval evaluation summary for adapter/migration features, SLO/capacity notes, and recovery instructions.
