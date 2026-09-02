@@ -17,6 +17,7 @@ All notable changes to EmbedRelay are recorded here. The project has not publish
 
 ### Changed
 
+- PostgreSQL registry and audit persistence now store the Rust domain's exact canonical `sha256:<64 lowercase hex>` space fingerprint unchanged. Bare 64-hex digests are rejected, preventing storage adapters or callers from silently stripping and later reconstructing identity material at the domain/persistence boundary; registry, concurrency, and backup/restore tests use the same canonical representation end to end.
 - Product, technical, architecture, ERD, traceability, operability, and documentation-fitness truth boundaries now distinguish the active-PR PostgreSQL M1 persistence/recovery acceptance slice from the broader still-planned durable control plane and later adapter/migration product surfaces.
 - Registration persistence is explicitly duplicate-rejecting rather than an implicit UPSERT. A future idempotent replay API must introduce a stable request key and a separate tested contract instead of heuristic conflict handling.
 
