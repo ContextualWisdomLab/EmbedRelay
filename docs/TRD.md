@@ -32,7 +32,7 @@ ports
   telemetry / audit
 ```
 
-Current PR #1 implements the first Rust contracts for space identity, vector safety, UUIDv7 identity, tenant registration, and audit-before-mutation intent **plus** a narrow PostgreSQL tenant registry/audit persistence boundary. It does not yet implement the full control plane, deployable API, adapter fitting/evaluation, migration orchestration, provider/vector-store ports, or GPU compute.
+Current PR #1 implements the first Rust contracts for space identity, vector safety, UUIDv7 identity, tenant registration, and audit-before-mutation intent **plus** an executable PostgreSQL tenant registry/audit/canonical-manifest persistence boundary. It does not yet implement the full control plane, deployable API, adapter fitting/evaluation, migration orchestration, provider/vector-store ports, or GPU compute.
 
 ## 3. Canonical space identity
 
@@ -47,7 +47,7 @@ Current PR #1 implements the first Rust contracts for space identity, vector saf
 - similarity/distance metric contract;
 - any provider parameter demonstrated to change vector geometry.
 
-The canonical serialization and hash algorithm must be versioned. A change that can alter geometry produces a different space identity; provider marketing/model names are insufficient. The active-PR PostgreSQL M1 slice persists the tenant/fingerprint registration key only; durable full canonical-manifest storage remains an M1 follow-through requirement.
+The canonical serialization and hash algorithm is versioned. A change that can alter geometry produces a different space identity; provider marketing/model names are insufficient. The active-PR PostgreSQL M1 slice now persists the complete v1 canonical manifest once per exact fingerprint in `embedding_space_manifest` and binds tenant registrations to it through a deferred foreign key. The database registration command validates the exact v1 key set and recomputes the Rust-compatible domain-separated SHA-256 fingerprint from UTF-8 byte-length framed fields before commit.
 
 ## 4. Vector validation
 
@@ -130,28 +130,29 @@ Backfill prioritization can use uncertainty, access frequency, business critical
 
 ## 10. Data and tenant model
 
-The **active-PR M1 physical persistence slice** uses PostgreSQL 18.x and is deliberately narrow:
+The **active-PR M1 physical persistence slice** uses PostgreSQL 18.x and remains deliberately narrow:
 
 - schema `embedrelay_registry`;
+- table `embedding_space_manifest(space_fingerprint, manifest_version_code, provider_identifier, model_identifier, model_revision, modality_code, input_role_code, instruction_template_hash, pooling_strategy_code, normalization_strategy_code, vector_dimension, numeric_precision_code, distance_metric_code, preprocessing_policy_hash, manifest_created_at)`;
 - table `tenant_space_registry(tenant_space_record_id, tenant_id, space_fingerprint, created_at)`;
 - table `space_registration_audit(audit_event_id, tenant_id, space_fingerprint, actor_id, action_code, occurred_at)`;
-- unique `(tenant_id, space_fingerprint)` registration identity;
-- PostgreSQL `uuidv7()` for durable row/event identifiers;
-- deferred foreign key from the audit tenant/fingerprint pair to the registry key, allowing audit-first insertion but requiring a valid registration at commit;
-- forced RLS on both tenant-scoped tables using explicit `embedrelay.tenant_id` session context;
+- global canonical manifest identity keyed by exact `space_fingerprint`, with separate unique `(tenant_id, space_fingerprint)` tenant registration identity;
+- PostgreSQL `uuidv7()` for durable registration/event identifiers;
+- deferred foreign keys from audit→tenant registration and tenant registration→canonical manifest, allowing audit-first ordering and manifest materialization in one transaction while requiring both referenced facts at commit;
+- forced RLS on all three tables: tenant registry/audit are directly tenant-scoped and manifest visibility is derived from the tenant's authorized registration;
 - append-only mutation/truncate denial;
 - public/default privileges revoked;
-- guarded destructive rollback.
+- guarded destructive rollback for both persistence migrations.
 
-This slice is in 3NF: registration facts and audit-event facts live in separate relations. It does **not** yet persist the complete immutable canonical manifest, adapters, vector references, evaluation records, migration plans/stages, index bindings, backfill tasks, drift events, or broader policy state. Those remain planned durable control-plane objects.
+This slice remains in 3NF: immutable compatibility material is stored once per canonical fingerprint, tenant ownership/registration is stored separately, and audit-event facts remain separate. The manifest registration function validates the complete v1 JSON shape, rejects unknown keys and invalid material, recomputes the exact Rust-compatible fingerprint with PostgreSQL core SHA-256, then performs audit + tenant registration + canonical insert-or-match atomically. It does **not** yet persist adapters, vector references, evaluation records, migration plans/stages, index bindings, backfill tasks, drift events, or broader policy state.
 
 UUIDv7 identifiers are opaque durable IDs only; tenant authorization and business chronology remain explicit relational/context data.
 
 ## 11. Concurrency and idempotency
 
-Current M1 durable registration has one minimal transaction boundary: one tenant/fingerprint registration attempt. The function inserts `space_registration_intent` audit first, then the registry row, and both commit or roll back together.
+Current M1 durable registration has one minimal transaction boundary: one manifest-bearing tenant/space registration attempt. Audit intent is inserted first, tenant registration follows, and the canonical manifest row is inserted or matched in the same transaction; deferred references require a complete committed state.
 
-The current contract is deliberately **duplicate-rejecting, not UPSERT-based**. Concurrent same-tenant/space registration is serialized by the unique `(tenant_id, space_fingerprint)` key and must produce exactly one committed registry row and one committed audit event; the losing unique-violation transaction rolls its audit insert back. A future idempotent replay API requires a stable request/idempotency key and a separate test-first contract rather than heuristic conflict handling.
+Tenant registration remains deliberately **duplicate-rejecting, not UPSERT-based**. Concurrent same-tenant/space registration is serialized by the unique `(tenant_id, space_fingerprint)` key and must produce exactly one committed registry row and one committed audit event; the losing unique-violation transaction rolls its audit insert back. Canonical manifest persistence has a different item-level contract: identical manifest material may be shared across tenants by fingerprint, so it uses explicit insert-or-match semantics and verifies every canonical field after a conflict. A future replay-safe request API still requires a stable request/idempotency key and separate test-first semantics.
 
 No global application lock, partitioning scheme, or read/write split is justified yet. Add partitioning, CQRS, or replicas only from measured hot-key/read pressure while preserving forced RLS and the same item-level invariants.
 
@@ -164,7 +165,8 @@ Provider and vector-store integrations sit behind versioned ports. Core logic ne
 - embeddings/anchors/adapters are sensitive assets;
 - tenant identity is explicit and not vector-derived;
 - the active M1 persistence slice uses forced RLS and a non-`BYPASSRLS` adversarial contract;
-- registry/audit rows are append-only; destructive rollback is separately gated;
+- canonical manifest visibility is denied unless the current tenant has a matching registration;
+- registry/manifest/audit rows are append-only; destructive rollback is separately gated;
 - artifacts will be digested/signed and immutable after release;
 - training/evaluation input provenance is auditable;
 - poisoned anchors, model-output drift, inversion/extraction, cross-tenant query, replay, rollback tampering, and malicious artifact loading are in threat scope;
@@ -193,12 +195,12 @@ Do not expose raw vectors or protected text in ordinary logs. For the current M1
 M1 Space Registry and Vector Safety is complete only after:
 
 - durable PostgreSQL migrations and guarded rollback — **active-PR implemented; exact-head verification required**;
-- tenant RLS/authorization enforcement — **active-PR implemented for the two M1 tables; exact-head verification required**;
-- immutable complete space manifest/fingerprint storage — **fingerprint registration implemented; complete manifest persistence still required**;
+- tenant RLS/authorization enforcement — **active-PR implemented for registry, audit, and canonical-manifest visibility; exact-head verification required**;
+- immutable complete space manifest/fingerprint storage — **active-PR implemented through migration 0002 and manifest-bearing registration; exact-head verification required**;
 - append-only durable audit and transactional concurrency behavior — **active-PR implemented; exact-head verification required**;
 - exact production coverage/docstrings and locked dependency resolution — **CI contract present; current-head evidence required**;
 - security/threat tests — **partial; central dependency-review availability remains an external governance blocker when HTTP 403 recurs**;
-- operability/recovery evidence — **migration rollback contract present; measured backup/restore still required**;
+- operability/recovery evidence — **logical backup/restore acceptance now includes canonical manifest material; production RTO/RPO/PITR remains deployment-dependent and unclaimed**;
 - integrated current-head CI/security/independent review — **required before Draft can be considered ready**.
 
 Adapter training and dual-index migration belong to later milestones after this substrate is accepted.
