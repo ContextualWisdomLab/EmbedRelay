@@ -15,7 +15,6 @@ flowchart LR
         Q[Query/RAG client]
         OP[Operator/control client]
     end
-
     subgraph control[Control plane]
         SR[Space Registry]
         AR[Adapter Registry]
@@ -23,28 +22,24 @@ flowchart LR
         CG[Confidence Policy]
         AU[Audit/Policy]
     end
-
     subgraph compute[Compute plane]
         AF[Adapter Forge]
         FB[Fidelity Bench]
         CPU[CPU reference]
         GPU[GPU backend]
     end
-
     subgraph data[Data plane]
         VV[Vector Validator]
         TG[Translation Gateway]
         IR[Dual-Index Router]
         BF[Native Backfill]
     end
-
     subgraph ports[Provider-neutral ports]
         EP[Embedding providers]
         VS[Vector stores]
         OS[Artifact/KMS/Object store]
         OT[Telemetry]
     end
-
     OP --> SR
     OP --> AR
     OP --> MC
@@ -74,9 +69,9 @@ flowchart LR
 PR #1 now contains two coupled implementation layers:
 
 1. a Rust domain-contract crate implementing canonical embedding-space identity, fail-closed vector validation, RFC 9562 UUIDv7 identifier semantics, tenant-isolated reference registration, and audit-before-mutation intent behavior; and
-2. a narrow PostgreSQL 18.x persistence slice implementing tenant/fingerprint registration, durable `space_registration_intent` audit, forced RLS, append-only durability, deterministic duplicate/concurrent rejection, and guarded rollback.
+2. a PostgreSQL 18.x persistence slice implementing immutable canonical-manifest storage, tenant/fingerprint registration, durable `space_registration_intent` audit, forced RLS, append-only durability, deterministic duplicate/concurrent registration behavior, manifest/fingerprint recomputation, logical backup/restore acceptance, and guarded rollback.
 
-The PostgreSQL slice is active-PR source only, not protected-main or release evidence. Full immutable canonical-manifest persistence, deployable service/API, adapter fitting/evaluation, artifact loading, confidence policy, translation gateway, dual-index routing, native backfill, provider/vector-store ports, broader service/admin roles, backup/restore acceptance, and GPU compute remain incomplete or planned.
+The PostgreSQL slice is active-PR source only, not protected-main or release evidence. Deployable service/API, adapter fitting/evaluation, artifact loading, confidence policy, translation gateway, dual-index routing, native backfill, provider/vector-store ports, broader service/admin roles, production recovery architecture, and GPU compute remain incomplete or planned.
 
 ```mermaid
 flowchart LR
@@ -85,6 +80,7 @@ flowchart LR
     V[ValidatedVector]
     ID[RelayIdentifier UUIDv7]
     REG[SpaceRegistry domain boundary]
+    CM[(embedding_space_manifest)]
     DB[(tenant_space_registry)]
     AUD[(space_registration_audit)]
 
@@ -92,11 +88,14 @@ flowchart LR
     FP --> V
     ID --> REG
     FP --> REG
-    REG -->|transactional registration| AUD
-    AUD -->|deferred reference requires row at commit| DB
+    REG -->|manifest-bearing transaction| AUD
+    REG --> CM
+    REG --> DB
+    AUD -->|deferred tenant registration reference| DB
+    DB -->|deferred canonical identity reference| CM
 ```
 
-The persistence transaction boundary is one tenant/fingerprint registration attempt. Audit intent is inserted first; registration follows in the same transaction. Duplicate same-item registration is deliberately rejected by the unique `(tenant_id, space_fingerprint)` key and rolls the attempted audit insert back. This is not an implicit UPSERT contract.
+The persistence transaction boundary is one manifest-bearing tenant/fingerprint registration attempt. Audit intent is inserted first; tenant registration and canonical manifest insert-or-match follow in the same transaction. Duplicate same-tenant registration is deliberately rejected by the unique `(tenant_id, space_fingerprint)` key and rolls the attempted audit insert back. An identical canonical manifest may be reused across tenants because the immutable compatibility fact is stored once globally by exact fingerprint; conflicting material for the same fingerprint fails closed. This is distinct from a replay-idempotency API.
 
 ## Domain boundaries
 
@@ -106,7 +105,7 @@ Owns canonical space identity, compatibility, directional adapter fidelity, abst
 
 ### Supporting subdomain — Registry Governance
 
-Owns tenant-scoped immutable registration, durable audit, drift quarantine, and release evidence. The active M1 PostgreSQL slice belongs here.
+Owns immutable canonical manifests, tenant-scoped registration, durable audit, drift quarantine, and release evidence. The active M1 PostgreSQL slice belongs here.
 
 ### Supporting subdomain — Migration Operations
 
@@ -119,8 +118,8 @@ Provider, vector-store, object-store/KMS, telemetry, and identity integrations r
 ## Trust boundaries
 
 1. **Vector input boundary:** vectors and manifests are untrusted until space and numeric validation passes.
-2. **Tenant authority boundary:** tenant authorization is explicit; UUID/fingerprint/vector content never proves tenancy. Current M1 PostgreSQL tables force RLS against explicit `embedrelay.tenant_id` session context.
-3. **Persistence mutation boundary:** registry/audit rows are append-only; destructive rollback is a separately gated operator migration action.
+2. **Tenant authority boundary:** tenant authorization is explicit; UUID/fingerprint/vector content never proves tenancy. Current M1 PostgreSQL tenant registry/audit tables force RLS against explicit `embedrelay.tenant_id`; canonical manifest visibility is derived through an authorized tenant registration.
+3. **Persistence mutation boundary:** registry/manifest/audit rows are append-only; destructive rollback is a separately gated operator migration action.
 4. **Adapter artifact boundary:** weights/manifests are immutable, digest-bound, signed/reviewed artifacts before production use.
 5. **Provider boundary:** provider responses are revalidated for dimension/space contract; model names are not trusted identities.
 6. **Vector-store boundary:** score semantics are space/index-specific; the router combines ranks/results, not raw incompatible scores by default.
@@ -128,24 +127,27 @@ Provider, vector-store, object-store/KMS, telemetry, and identity integrations r
 
 ## Space registry
 
-The Rust reference registry proves the domain behavior for `(tenant_id, canonical_fingerprint)` registration and audit-before-visibility semantics. The active PostgreSQL implementation persists the narrow tenant/fingerprint registration and audit intent using descriptive multi-word `snake_case` objects under `embedrelay_registry`.
+The Rust reference registry proves `(tenant_id, canonical_fingerprint)` registration and audit-before-visibility semantics. The PostgreSQL implementation persists the canonical v1 manifest once in `embedding_space_manifest`, separately records tenant ownership in `tenant_space_registry`, and records append-only registration intent in `space_registration_audit`.
 
-The physical M1 slice does not yet persist the complete canonical manifest. That follow-up must preserve one canonical versioned source of compatibility truth rather than duplicating mutable fields across relations. If output drift is detected under the same provider/model label, the existing space identity is not mutated; a new or quarantined identity is required.
+`register_tenant_space_manifest(uuid, text, jsonb)` accepts exactly the v1 material keys, validates their primitive/value contracts, recomputes the Rust-compatible `sha256:<64 lowercase hex>` identity using the same domain separator and UTF-8 byte-length framing, then atomically materializes audit, tenant registration, and canonical manifest state. Provider/model output drift therefore creates a new identity rather than mutating an existing manifest.
 
 ## Persistence architecture
 
 Current active-PR physical objects:
 
-- `tenant_space_registry` — immutable per-tenant fingerprint registration, PostgreSQL UUIDv7 record ID, unique tenant/fingerprint key;
-- `space_registration_audit` — append-only audit intent, PostgreSQL UUIDv7 event ID, actor/action/evidence key;
-- `register_tenant_space(uuid, text)` — one-item transactional command;
-- forced RLS on both tables;
+- `embedding_space_manifest` — immutable normalized compatibility material, one row per exact canonical fingerprint;
+- `tenant_space_registry` — immutable per-tenant fingerprint registration, PostgreSQL UUIDv7 record ID, unique tenant/fingerprint key, deferred reference to canonical manifest;
+- `space_registration_audit` — append-only audit intent, PostgreSQL UUIDv7 event ID, actor/action evidence, deferred reference to tenant registration;
+- `register_tenant_space(uuid, text)` — lower-level fingerprint registration primitive retained for the first migration boundary;
+- `register_tenant_space_manifest(uuid, text, jsonb)` — manifest-bearing M1 command that makes the complete relational invariant satisfiable after migration 0002;
+- forced RLS on all three tables; manifest visibility depends on a matching tenant registration;
 - update/delete/truncate rejection triggers;
-- guarded destructive down migration.
+- guarded destructive down migrations;
+- PostgreSQL 18.6 contract and logical backup/restore tests.
 
-The slice is in 3NF and has no global application lock. Contention is localized to the tenant/fingerprint uniqueness key. No partitioning, read/write split, replica topology, or CQRS is claimed without measured pressure. The database is an internal persistence boundary and is not a public integration surface for downstream repositories.
+The slice is in 3NF: immutable manifest facts are keyed by fingerprint once, tenant registration facts are independent associations, and audit-event facts remain separate. There is no global application lock. Contention is localized to canonical fingerprint insertion and tenant/fingerprint uniqueness. No partitioning, read/write split, replica topology, or CQRS is claimed without measured pressure. The database is an internal persistence boundary and is not a public integration surface for downstream repositories.
 
-Broader target persistence still includes immutable canonical manifests, adapter/evaluation artifacts, vector references, migration plans/stages, index bindings, backfill tasks, drift events, policy decisions, and broader audit/provenance records.
+Broader target persistence still includes adapter/evaluation artifacts, vector references, migration plans/stages, index bindings, backfill tasks, drift events, policy decisions, and broader audit/provenance records.
 
 ## Adapter lifecycle
 
@@ -197,4 +199,4 @@ Ports expose versioned capabilities such as encode query/document, batch encode,
 
 ## Release architecture
 
-A released version requires immutable source, exact CI/security/review evidence, locked/reproducible dependencies, exact coverage/docstrings, PostgreSQL migration/RLS/concurrency/rollback verification for the persisted M1 surface, measured recovery evidence appropriate to production persistence, SBOM/provenance, signed adapter/release artifacts where applicable, retrieval-level fidelity gates for adapter/migration capabilities, and post-publication smoke evidence. A model or autonomous agent cannot independently approve its own numerical cutover or release.
+A released version requires immutable source, exact CI/security/review evidence, locked/reproducible dependencies, exact coverage/docstrings, PostgreSQL migration/RLS/concurrency/manifest/rollback verification for the persisted M1 surface, measured recovery evidence appropriate to production persistence, SBOM/provenance, signed adapter/release artifacts where applicable, retrieval-level fidelity gates for adapter/migration capabilities, and post-publication smoke evidence. A model or autonomous agent cannot independently approve its own numerical cutover or release.
