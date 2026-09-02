@@ -43,6 +43,8 @@ classDiagram
 
 ## As-built PostgreSQL M1 slice
 
+<!-- status:present-current -->
+
 The active PR now carries physical migrations for the narrow tenant registry boundary. This is active-PR implementation, not protected-main or release evidence.
 
 ```mermaid
@@ -91,6 +93,8 @@ The M1 slice is in 3NF: registry facts and audit-event facts are separate relati
 Concurrency is localized to the tenant/fingerprint unique key. Two identical concurrent registrations intentionally contend there and produce one winner. No global application lock, read/write split, or partitioning is introduced without measured need; hot-partition mitigation must preserve tenant RLS and registration invariants when evidence justifies it.
 
 ## Broader PostgreSQL control-plane target
+
+<!-- status:planned -->
 
 The physical M1 slice does not make the full target model as-built. Later milestones still own the following planned relations and their exact names/contracts:
 
