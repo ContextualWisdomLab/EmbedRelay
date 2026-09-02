@@ -76,21 +76,27 @@ fi
 # Keep ACLs in the dump. The prior registry contract deliberately provisions the
 # cluster-level embedrelay_test_client role and grants the schema/table/function
 # privileges that a restored database must retain.
+backup_started_ns="$(date +%s%N)"
 pg_dump "$DATABASE_URL" \
   --format=custom \
   --no-owner \
   --file="$backup_path"
+backup_finished_ns="$(date +%s%N)"
+backup_elapsed_ms="$(( (backup_finished_ns - backup_started_ns) / 1000000 ))"
 
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
   -c "DROP DATABASE IF EXISTS \"$restore_database\" WITH (FORCE);"
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
   -c "CREATE DATABASE \"$restore_database\" TEMPLATE template0;"
 
+restore_started_ns="$(date +%s%N)"
 pg_restore \
   --exit-on-error \
   --no-owner \
   --dbname="$restore_url" \
   "$backup_path"
+restore_finished_ns="$(date +%s%N)"
+restore_elapsed_ms="$(( (restore_finished_ns - restore_started_ns) / 1000000 ))"
 
 restored_first_registry_id="$(psql "$restore_url" -v ON_ERROR_STOP=1 -tAc \
   "SELECT tenant_space_record_id FROM embedrelay_registry.tenant_space_registry WHERE tenant_id='${first_tenant}'::uuid AND space_fingerprint='${first_fingerprint}';")"
@@ -232,5 +238,6 @@ if [[ "$backup_bytes" -le 0 ]]; then
   exit 1
 fi
 
-printf 'PostgreSQL backup/restore acceptance passed: rows=%s backup_bytes=%s first_registry=%s second_registry=%s\n' \
-  "$restored_counts" "$backup_bytes" "$restored_first_registry_id" "$restored_second_registry_id"
+printf 'PostgreSQL backup/restore acceptance passed: rows=%s backup_bytes=%s backup_ms=%s restore_ms=%s first_registry=%s second_registry=%s\n' \
+  "$restored_counts" "$backup_bytes" "$backup_elapsed_ms" "$restore_elapsed_ms" \
+  "$restored_first_registry_id" "$restored_second_registry_id"
