@@ -48,6 +48,10 @@ jobs:
         run: |
           psql --version
           bash tests/postgres_registry_contract.sh
+      - name: PostgreSQL backup and restore acceptance
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/embedrelay_contract
+        run: bash tests/postgres_backup_restore_contract.sh
       - name: Install pinned branch-coverage toolchain
         run: rustup toolchain install nightly-2026-08-01 --profile minimal --component llvm-tools-preview
       - name: Install pinned cargo-llvm-cov
