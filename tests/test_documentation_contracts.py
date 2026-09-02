@@ -96,11 +96,9 @@ def _type_matches(expected: str, value: Any) -> bool:
     if expected == "string":
         return isinstance(value, str)
     if expected == "number":
-        return (
-            isinstance(value, (int, float))
-            and not isinstance(value, bool)
-            and math.isfinite(float(value))
-        )
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return False
+        return math.isfinite(value) if isinstance(value, float) else True
     if expected == "integer":
         return isinstance(value, int) and not isinstance(value, bool)
     if expected == "null":
@@ -307,6 +305,13 @@ class ConversionResponseSchemaTests(unittest.TestCase):
                 value = _valid_converted()
                 value["vector"] = vector
                 self.assertContractInvalid(value)
+
+    def test_huge_json_integer_does_not_abort_number_validation(self) -> None:
+        """Treat an arbitrarily large JSON integer as a number without float overflow."""
+
+        value = _valid_converted()
+        value["vector"][1] = 10**10000
+        self.assertContractValid(value)
 
     def test_cross_variant_fields_and_statuses_do_not_escape_one_of(self) -> None:
         """Reject hybrid or unknown union variants rather than choosing one permissively."""

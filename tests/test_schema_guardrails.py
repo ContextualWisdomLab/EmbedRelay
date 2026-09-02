@@ -44,6 +44,21 @@ SUPPORTED_SCHEMA_KEYWORDS = {
 }
 
 
+def _matches_string_definition(definition: dict[str, Any], value: str) -> bool:
+    """Apply all string constraints instead of relying on regex anchor behavior alone."""
+
+    if definition.get("type") != "string":
+        return False
+    min_length = definition.get("minLength")
+    max_length = definition.get("maxLength")
+    if isinstance(min_length, int) and len(value) < min_length:
+        return False
+    if isinstance(max_length, int) and len(value) > max_length:
+        return False
+    pattern = definition.get("pattern")
+    return not isinstance(pattern, str) or re.search(pattern, value) is not None
+
+
 def _assert_supported_keywords(schema: dict[str, Any], path: str = "$") -> None:
     """Reject every schema keyword the dependency-free verifier does not understand."""
 
@@ -93,11 +108,9 @@ def _type_matches(expected: str, value: Any) -> bool:
     if expected == "string":
         return isinstance(value, str)
     if expected == "number":
-        return (
-            isinstance(value, (int, float))
-            and not isinstance(value, bool)
-            and math.isfinite(float(value))
-        )
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return False
+        return math.isfinite(value) if isinstance(value, float) else True
     if expected == "integer":
         return isinstance(value, int) and not isinstance(value, bool)
     if expected == "null":
@@ -222,8 +235,9 @@ class SchemaGuardrailTests(unittest.TestCase):
         definition = self.schema["$defs"]["vectorSchemaId"]
         self.assertEqual(definition["minLength"], 102)
         self.assertEqual(definition["maxLength"], 102)
-        self.assertIsNotNone(re.search(definition["pattern"], VALID_VECTOR_SCHEMA_ID))
-        self.assertIsNone(re.search(definition["pattern"], f"{VALID_VECTOR_SCHEMA_ID}\n"))
+        self.assertTrue(_matches_string_definition(definition, VALID_VECTOR_SCHEMA_ID))
+        self.assertFalse(_matches_string_definition(definition, f"{VALID_VECTOR_SCHEMA_ID}\n"))
+        self.assertFalse(_matches_string_definition(definition, f"{VALID_VECTOR_SCHEMA_ID}\r\n"))
 
     def test_target_specific_release_schema_binds_identity_and_exact_dimension(self) -> None:
         bound = _target_bound_schema(
@@ -258,6 +272,17 @@ class SchemaGuardrailTests(unittest.TestCase):
             self.assertTrue(_schema_errors(bound, converted_schema, payload))
             with self.assertRaises(ValueError):
                 json.dumps(payload, allow_nan=False)
+
+    def test_huge_json_integer_does_not_abort_validation(self) -> None:
+        bound = _target_bound_schema(
+            self.schema,
+            target_space_id=VALID_TARGET_SPACE_ID,
+            vector_schema_id=VALID_VECTOR_SCHEMA_ID,
+            dimension=3,
+        )
+        payload = _valid_converted()
+        payload["vector"][1] = 10**10000
+        self.assertEqual(_schema_errors(bound, bound["$defs"]["converted"], payload), [])
 
     def test_current_ci_range_runs_git_diff_check_on_committed_changes(self) -> None:
         event = os.environ.get("EMBEDRELAY_DOCS_EVENT")
