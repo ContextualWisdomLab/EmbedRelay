@@ -3,6 +3,11 @@
 **Status:** Accepted active-PR baseline  
 **Last reviewed:** 2026-09-02
 
+<!-- status:active-pr-implemented -->
+<!-- status:planned -->
+
+The stable status markers above are machine-readable maturity anchors: executable rows remain active-PR implementation until exact-head promotion, while rows whose maturity column says `planned` remain non-executable target capabilities.
+
 | Product/architecture requirement | Decision/doc | Current source/evidence | Maturity |
 |---|---|---|---|
 | immutable complete space identity | PRD-FR-001; ADR-0002 | `manifest` Rust domain contract + tests; canonical identity is `sha256:<64 lowercase hex>` | active PR implemented |
