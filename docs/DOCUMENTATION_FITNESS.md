@@ -21,6 +21,12 @@ The current documentation baseline is strong enough to guide M1 development, but
 
 Implementation maturity is tracked separately as active-PR implemented, protected-main implemented, accepted target, planned, partial, or out of scope. Active-PR implementation is not protected-main or release evidence until its exact head satisfies repository gates.
 
+<!-- status:present-current -->
+<!-- status:partial -->
+<!-- status:planned -->
+
+The stable status markers above are machine-readable anchors for the three fitness states currently exercised by the matrix. The table remains the human-readable source for which documentation family owns each state.
+
 ## Whole-product documentation matrix
 
 | Documentation family | Fitness | Canonical authority / evidence | Required follow-through |
