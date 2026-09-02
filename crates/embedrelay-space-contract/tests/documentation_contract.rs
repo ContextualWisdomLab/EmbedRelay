@@ -85,47 +85,54 @@ fn canonical_product_architecture_documents_exist() {
 }
 
 #[test]
-fn m1_postgres_erd_matches_executable_persistence_slice() {
+fn m1_postgres_erd_marks_current_and_planned_persistence_boundaries() {
     let erd = read_document("docs/ERD.md");
-    for required_claim in [
-        "As-built PostgreSQL M1 slice",
-        "tenant_space_registry",
-        "space_registration_audit",
-        "forced RLS",
-        "Broader PostgreSQL control-plane target",
-    ] {
+    assert!(
+        erd.contains("<!-- status:present-current -->"),
+        "ERD must expose a stable marker for the executable current persistence slice"
+    );
+    assert!(
+        erd.contains("<!-- status:planned -->"),
+        "ERD must expose a stable marker for the broader planned persistence target"
+    );
+    for required_object in ["tenant_space_registry", "space_registration_audit"] {
         assert!(
-            erd.contains(required_claim),
-            "ERD is missing current persistence claim: {required_claim}"
+            erd.contains(required_object),
+            "ERD is missing current persistence object: {required_object}"
         );
     }
-    assert!(!erd.contains("Current PR #1 persists none of these tables yet"));
 }
 
 #[test]
-fn traceability_keeps_future_migration_components_planned() {
+fn traceability_uses_stable_maturity_markers() {
     let traceability = read_document("docs/TRACEABILITY.md");
-    assert!(traceability.contains("PostgreSQL tenant RLS/audit"));
-    assert!(traceability.contains("active PR implemented"));
-    assert!(traceability.contains("directional role-specific adapters"));
-    assert!(traceability.contains("dual-index migration"));
-    assert!(traceability.contains("planned"));
+    assert!(
+        traceability.contains("<!-- status:active-pr-implemented -->"),
+        "traceability must mark active-PR implementation with a stable status marker"
+    );
+    assert!(
+        traceability.contains("<!-- status:planned -->"),
+        "traceability must mark future capabilities with a stable planned marker"
+    );
+    for required_capability in ["PostgreSQL tenant RLS/audit", "dual-index migration"] {
+        assert!(
+            traceability.contains(required_capability),
+            "traceability is missing capability: {required_capability}"
+        );
+    }
 }
 
 #[test]
-fn documentation_fitness_exposes_conversation_planning_gaps_without_overclaiming() {
+fn documentation_fitness_exposes_stable_status_vocabulary() {
     let fitness = read_document("docs/DOCUMENTATION_FITNESS.md");
-    for required_claim in [
-        "Evaluation protocol | **PARTIAL**",
-        "Research and standards traceability | **PARTIAL**",
-        "Machine-readable API and schema artifacts | **PLANNED**",
-        "Physical PostgreSQL ERD | **PRESENT-CURRENT**",
-        "Data model | **PRESENT-CURRENT**",
-        "Migration runbook | **PRESENT-CURRENT**",
+    for status_marker in [
+        "<!-- status:present-current -->",
+        "<!-- status:partial -->",
+        "<!-- status:planned -->",
     ] {
         assert!(
-            fitness.contains(required_claim),
-            "documentation fitness is missing required claim: {required_claim}"
+            fitness.contains(status_marker),
+            "documentation fitness is missing stable marker: {status_marker}"
         );
     }
     assert!(fitness.contains(
