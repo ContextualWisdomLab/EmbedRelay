@@ -48,6 +48,10 @@ jobs:
         run: |
           psql --version
           bash tests/postgres_registry_contract.sh
+      - name: PostgreSQL canonical manifest persistence contract
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/embedrelay_contract
+        run: bash tests/postgres_manifest_persistence_contract.sh
       - name: PostgreSQL backup and restore acceptance
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/embedrelay_contract
