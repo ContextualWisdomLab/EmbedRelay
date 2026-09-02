@@ -52,7 +52,7 @@ BEGIN
   BEGIN
     PERFORM embedrelay_registry.register_tenant_space(
       '017f22e2-79b0-7cc3-98c4-dc0c0c0c073b'::uuid,
-      repeat('a', 64)
+      'sha256:' || repeat('a', 64)
     );
     RAISE EXCEPTION 'registration unexpectedly succeeded without tenant context';
   EXCEPTION
@@ -67,8 +67,18 @@ DO $$
 DECLARE
   first_event uuid;
   first_record uuid;
-  first_fingerprint text := repeat('a', 64);
+  first_fingerprint text := 'sha256:' || repeat('a', 64);
 BEGIN
+  BEGIN
+    PERFORM embedrelay_registry.register_tenant_space(
+      '017f22e2-79b0-7cc3-98c4-dc0c0c0c073b'::uuid,
+      repeat('a', 64)
+    );
+    RAISE EXCEPTION 'bare fingerprint digest unexpectedly succeeded';
+  EXCEPTION
+    WHEN invalid_parameter_value THEN NULL;
+  END;
+
   BEGIN
     PERFORM embedrelay_registry.register_tenant_space(
       '017f22e2-79b0-7cc3-98c4-dc0c0c0c073b'::uuid,
@@ -120,7 +130,7 @@ BEGIN
     INSERT INTO embedrelay_registry.tenant_space_registry
       (tenant_id, space_fingerprint)
     VALUES
-      ('017f22e2-79b0-7cc3-98c4-dc0c0c0c073a'::uuid, repeat('b', 64));
+      ('017f22e2-79b0-7cc3-98c4-dc0c0c0c073a'::uuid, 'sha256:' || repeat('b', 64));
     RAISE EXCEPTION 'cross-tenant insert unexpectedly succeeded';
   EXCEPTION
     WHEN insufficient_privilege THEN NULL;
@@ -188,7 +198,7 @@ SQL
 
 race_tenant="017f22e2-79b0-7cc3-98c4-dc0c0c0c0740"
 race_actor="017f22e2-79b0-7cc3-98c4-dc0c0c0c0741"
-race_fingerprint="$(printf 'c%.0s' {1..64})"
+race_fingerprint="sha256:$(printf 'c%.0s' {1..64})"
 race_sql="SET ROLE embedrelay_test_client; SELECT set_config('embedrelay.tenant_id', '${race_tenant}', false); SELECT embedrelay_registry.register_tenant_space('${race_actor}'::uuid, '${race_fingerprint}');"
 
 set +e
