@@ -9,7 +9,7 @@ CREATE TABLE embedrelay_registry.tenant_space_registry (
     space_fingerprint text NOT NULL,
     created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
     CONSTRAINT tenant_space_registry_fingerprint_format
-        CHECK (space_fingerprint ~ '^[0-9a-f]{64}$'),
+        CHECK (space_fingerprint ~ '^sha256:[0-9a-f]{64}$'),
     CONSTRAINT tenant_space_registry_identity_key
         UNIQUE (tenant_id, space_fingerprint)
 );
@@ -22,7 +22,7 @@ CREATE TABLE embedrelay_registry.space_registration_audit (
     action_code text NOT NULL,
     occurred_at timestamptz NOT NULL DEFAULT clock_timestamp(),
     CONSTRAINT space_registration_audit_fingerprint_format
-        CHECK (space_fingerprint ~ '^[0-9a-f]{64}$'),
+        CHECK (space_fingerprint ~ '^sha256:[0-9a-f]{64}$'),
     CONSTRAINT space_registration_audit_action_code
         CHECK (action_code = 'space_registration_intent'),
     CONSTRAINT space_registration_audit_registry_reference
@@ -120,8 +120,8 @@ BEGIN
     END IF;
 
     IF requested_space_fingerprint IS NULL
-       OR requested_space_fingerprint !~ '^[0-9a-f]{64}$' THEN
-        RAISE EXCEPTION 'requested_space_fingerprint must be 64 lowercase hexadecimal characters'
+       OR requested_space_fingerprint !~ '^sha256:[0-9a-f]{64}$' THEN
+        RAISE EXCEPTION 'requested_space_fingerprint must be sha256:<64 lowercase hexadecimal characters>'
             USING ERRCODE = '22023';
     END IF;
 
@@ -157,10 +157,10 @@ REVOKE ALL ON FUNCTION embedrelay_registry.register_tenant_space(uuid, text) FRO
 COMMENT ON SCHEMA embedrelay_registry IS
     'EmbedRelay tenant-scoped immutable embedding-space registry and durable audit boundary.';
 COMMENT ON TABLE embedrelay_registry.tenant_space_registry IS
-    'Immutable tenant-to-space registrations. Duplicate registration is rejected; this is intentionally not an UPSERT contract.';
+    'Immutable tenant-to-space registrations keyed by the exact canonical sha256:<digest> space fingerprint. Duplicate registration is rejected; this is intentionally not an UPSERT contract.';
 COMMENT ON TABLE embedrelay_registry.space_registration_audit IS
-    'Append-only durable audit intents. The deferred registry reference lets audit insertion precede registry visibility in one transaction.';
+    'Append-only durable audit intents keyed by the exact canonical sha256:<digest> space fingerprint. The deferred registry reference lets audit insertion precede registry visibility in one transaction.';
 COMMENT ON FUNCTION embedrelay_registry.register_tenant_space(uuid, text) IS
-    'Registers one tenant-space item transactionally. The audit intent is inserted first; a duplicate/concurrent unique violation rolls the audit row back with the statement.';
+    'Registers one tenant-space item transactionally without stripping or reconstructing the canonical sha256:<digest> fingerprint. The audit intent is inserted first; a duplicate/concurrent unique violation rolls the audit row back with the statement.';
 
 COMMIT;
