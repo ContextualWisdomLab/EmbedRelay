@@ -17,15 +17,16 @@ The bounded commercial promise is that operators can change embedding spaces wit
 
 | Capability | Product owner / bounded context | Current evidence | Active-PR status | Next verification / action |
 |---|---|---|---|---|
-| Canonical embedding-space identity | Space Identity | `manifest.rs`, manifest tests, PRD-FR-001, ADR-0002 | implemented in Rust on PR #1 | exact-head Rust CI and independent review |
+| Canonical embedding-space identity | Space Identity | `manifest.rs`, manifest tests, PRD-FR-001, ADR-0002 | implemented in Rust on PR #1; canonical value is `sha256:<64 lowercase hex>` | exact-head Rust CI and independent review |
+| Canonical fingerprint persistence | Space Registry | `migrations/0001_tenant_space_registry.up.sql`, PostgreSQL registry + restore contracts; root-cause fix introduced at `d218c4a24164edf7fc5bd74fc3ca880402fa9ecf` after RED tests `1a5222b0dcc6d3f03e195bc63811c05da4461aac` / `19e018bd842a38ca523ed9c7e3b6a8a91d928739` | exact Rust domain value is now stored unchanged; bare digest is rejected | successor-head PostgreSQL 18.6 and backup/restore CI must pass; predecessor results are non-passing |
 | Fail-closed vector compatibility | Vector Safety | `vector.rs`, vector tests, PRD-FR-002 | implemented in Rust on PR #1 | exact-head coverage/security evidence |
 | Opaque UUIDv7 identifiers | Registry Identity | `identifier.rs`, RFC test vector | implemented in Rust on PR #1 | exact-head Rust CI |
 | Tenant registration + audit-before-mutation domain contract | Space Registry | `registry.rs`, tenant registry tests | implemented in-memory on PR #1 | keep durable/in-memory invariants reconciled |
 | Durable PostgreSQL tenant registry | Space Registry | `migrations/0001_tenant_space_registry.up.sql` / `.down.sql` | implemented on active PR; not protected-main | PostgreSQL 18.6 contract must pass on exact head |
 | Forced tenant RLS | Space Registry | forced RLS on `tenant_space_registry` and `space_registration_audit`; negative cross-tenant contract | implemented on active PR; unverified until current CI completes | prove exact-head cross-tenant denial under non-bypass role |
 | Immutable durable registry + audit | Space Registry | append-only mutation/truncate triggers; guarded destructive rollback | implemented on active PR; unverified until current CI completes | exact-head PostgreSQL + recovery contracts |
-| Concurrent duplicate registration | Space Registry | unique `(tenant_id, space_fingerprint)` key; two-session race contract | deterministic duplicate rejection, not UPSERT | prove exactly one durable registry row and one audit event |
-| Logical backup/restore recovery | Operability | `tests/postgres_backup_restore_contract.sh`; CI recovery step | implemented acceptance candidate on active PR | exact-head run must prove two-tenant identity/count reconciliation, RLS, append-only triggers, ACL/comments, backup size and dump/restore timing |
+| Concurrent duplicate registration | Space Registry | unique `(tenant_id, space_fingerprint)` key; two-session race contract | deterministic duplicate rejection, not UPSERT | prove exactly one durable registry row and one audit event using canonical fingerprint strings |
+| Logical backup/restore recovery | Operability | `tests/postgres_backup_restore_contract.sh`; CI recovery step | implemented acceptance candidate on active PR | exact-head run must prove two-tenant canonical-fingerprint identity/count reconciliation, RLS, append-only triggers, ACL/comments, backup size and dump/restore timing |
 | Adapter registry/fitting | Adapter Fidelity | PRD/TRD/ADRs only | planned | implement Rust fitting/evaluation behind explicit M2 boundary |
 | Retrieval-level fidelity and calibration | Adapter Fidelity | PRD-FR-004, Test Strategy, ADR-0010 | planned | canonical evaluation protocol + held-out retrieval evidence |
 | Confidence/abstention | Translation Policy | PRD-FR-010, ADR-0007 | planned | executable policy contract and OOD/calibration tests |
@@ -62,7 +63,7 @@ The shared kernel is intentionally small: canonical space fingerprint, opaque id
 ### Ubiquitous language
 
 - **Embedding space:** complete immutable geometry/encoding contract, not a model marketing name.
-- **Space fingerprint:** canonical compatibility identity.
+- **Space fingerprint:** canonical compatibility identity serialized as the exact domain value `sha256:<64 lowercase hex>`; persistence and adapters must not strip or reconstruct its prefix.
 - **Native vector:** vector emitted directly by the registered target space.
 - **Translated vector:** approximation produced by an explicitly directional adapter.
 - **Adapter:** directional, role-specific transformation artifact with evidence and provenance.
@@ -72,14 +73,14 @@ The shared kernel is intentionally small: canonical space fingerprint, opaque id
 
 ### Aggregates, entities, value objects, services, events, invariants
 
-- **SpaceRegistry aggregate:** tenant + space fingerprint registration boundary. Durable transaction boundary is one registration attempt only; it does not absorb adapter or migration state.
+- **SpaceRegistry aggregate:** tenant + exact canonical space fingerprint registration boundary. Durable transaction boundary is one registration attempt only; it does not absorb adapter or migration state.
 - **EmbeddingSpaceManifest value object:** canonical immutable fields whose fingerprint determines compatibility.
 - **RelayIdentifier value object:** opaque RFC 9562 UUIDv7; never authorization or business chronology.
 - **ValidatedVector value object:** Rust-validated vector bound to one complete embedding-space identity.
 - **Future AdapterArtifact aggregate:** directional artifact + evaluation/calibration evidence; separate transaction/repository from SpaceRegistry.
 - **Future MigrationPlan aggregate:** cutover/backfill state and rollback evidence; separate transaction/repository.
 - **Domain event / audit intent:** `space_registration_intent`.
-- **Invariants:** no raw cross-space comparison; equal dimension is insufficient; tenant authority is explicit; durable registry/audit rows are immutable; audit intent and registration commit atomically; duplicate same-tenant registration is rejected deterministically; same fingerprint may exist independently for different tenants.
+- **Invariants:** no raw cross-space comparison; equal dimension is insufficient; canonical fingerprint representation is preserved end to end; tenant authority is explicit; durable registry/audit rows are immutable; audit intent and registration commit atomically; duplicate same-tenant registration is rejected deterministically; same fingerprint may exist independently for different tenants.
 
 ## Persistence contract
 
@@ -106,6 +107,8 @@ erDiagram
 
 Persistence names are descriptive multi-word `snake_case`. The two current relations are in 3NF: facts about a tenant-space registration live in `tenant_space_registry`; audit-event facts live in `space_registration_audit`; the deferred `(tenant_id, space_fingerprint)` foreign key preserves audit-first ordering without duplicating a mutable registry surrogate into the intent contract.
 
+`space_fingerprint` stores the complete Rust domain identity `sha256:<64 lowercase hex>` unchanged. The database constraints and registration command reject bare 64-hex digests and non-canonical case, so no storage adapter can silently drop the domain-separation prefix and later guess how to reconstruct it. Registry, concurrent-duplicate, and logical restore contracts exercise that same representation end to end.
+
 Registration is intentionally **not** an UPSERT. The item-level contract is insert-only: a duplicate `(tenant_id, space_fingerprint)` raises the unique-key outcome and the transaction rolls back its preceding audit insert. If a future API needs idempotent replay, it must add a stable request/idempotency key and a separate test-first contract instead of heuristic conflict handling.
 
 Concurrency is localized to the unique tenant/fingerprint key; there is no global application lock. Partitioning, CQRS/read replicas, or read/write splitting require measured contention/read pressure while preserving forced RLS and the same invariant.
@@ -115,7 +118,7 @@ Concurrency is localized to the unique tenant/fingerprint key; there is no globa
 - Forced RLS plus a non-`BYPASSRLS` adversarial contract is the current tenant-isolation mechanism for the M1 persistence slice.
 - Public/default privileges are revoked by migration; service access must be granted deliberately.
 - Registry and audit records are append-only; destructive rollback is gated by explicit `embedrelay.allow_destructive_rollback=on` and is not an ordinary product operation.
-- The logical backup/restore acceptance candidate uses only opaque UUIDs/generated fingerprints, restores into a fresh disposable database, reconciles two tenant registry/audit pairs exactly, and re-proves forced RLS, append-only triggers, application-role privileges and comments. Its backup size and timing are fixture measurements, not production RTO/RPO.
+- The logical backup/restore acceptance candidate uses only opaque UUIDs/generated canonical fingerprints, restores into a fresh disposable database, reconciles two tenant registry/audit pairs exactly, and re-proves forced RLS, append-only triggers, application-role privileges and comments. Its backup size and timing are fixture measurements, not production RTO/RPO.
 - PITR/WAL archiving, cross-host/object-store transport, encryption/key rotation, HA/failover and production-scale recovery remain unimplemented unless required by the deployment architecture.
 - Embeddings, anchors, adapter artifacts, and query/migration evidence remain potentially sensitive; controls must use purpose-bound authorization, encryption/KMS, retention/export governance, and incident evidence rather than destructive masking when masking would break the workload.
 - The product is designing toward CSAP/SOC 2 evidence quality, but no certification claim is made.
@@ -128,8 +131,9 @@ EmbedRelay remains standalone. Optional ContextualWisdomLab consumers/providers 
 
 | Priority | Gap | Owner | Evidence | Action | Exact-head status / next verification |
 |---|---|---|---|---|---|
+| P0 | Canonical fingerprint persistence verification | Space Registry | RED PostgreSQL tests at `1a5222b0...`/`19e018bd...`; migration root-cause fix at `d218c4a2...` | validate exact `sha256:<digest>` persistence, duplicate race, and restore on the successor head | implementation repaired; fresh exact-head PostgreSQL CI is required before promotion |
 | P0 | Durable registry + recovery exact-head verification | Space Registry / Operability | migrations + PostgreSQL registry contract + backup/restore contract + CI service | run PostgreSQL 18.6 RLS/concurrency/rollback/restore acceptance | current successor head requires fresh CI; queued/pending is non-passing |
-| P0 | Documentation truth reconciliation | Product Architecture | canonical docs now describe the narrow PostgreSQL slice and recovery candidate | keep implemented vs planned boundaries synchronized | fresh review on current successor head |
+| P0 | Documentation truth reconciliation | Product Architecture | canonical docs describe the narrow PostgreSQL slice, recovery candidate, and canonical representation invariant | keep implemented vs planned boundaries synchronized | fresh review on current successor head |
 | P0 | Central dependency-review gate availability | ContextualWisdomLab/.github | exact-head Security availability remains a shared control-plane concern tracked by `.github#810` | repair the central owner; do not bypass or substitute scanner | consumer must revalidate after upstream fix |
 | P0 | Independent approval | Release Governance | organization rules require one qualifying non-author approval | obtain independent review after exact-head checks | cannot self-approve or admin-bypass |
 | P1 | Full immutable space manifest persistence | Space Registry | durable M1 stores tenant + canonical fingerprint only | persist the canonical manifest/version contract without duplicating mutable facts | design/test before implementation |
@@ -141,4 +145,4 @@ EmbedRelay remains standalone. Optional ContextualWisdomLab consumers/providers 
 
 ## Verification rule
 
-Only evidence generated from the current PR head may promote an active-PR row. A predecessor head, queued workflow, PR comment, local reasoning, or mergeability flag is not a passing gate. The next exact-head verification must prove locked Rust dependency resolution, PostgreSQL 18.6 migration/RLS/concurrency/rollback/backup-restore behavior, exact LLVM coverage, central security status, review-thread state, and repository rules without governance weakening.
+Only evidence generated from the current PR head may promote an active-PR row. A predecessor head, queued workflow, PR comment, local reasoning, or mergeability flag is not a passing gate. The next exact-head verification must prove locked Rust dependency resolution, PostgreSQL 18.6 migration/RLS/concurrency/rollback/backup-restore behavior with the exact canonical `sha256:<digest>` representation, exact LLVM coverage, central security status, review-thread state, and repository rules without governance weakening.
