@@ -1,6 +1,6 @@
 # EmbedRelay security baseline
 
-Status: pre-release security design; no production certification claim  
+Status: pre-release security design; no production certification claim
 Last reconciled: 2026-09-02
 
 ## Trust boundaries

@@ -26,9 +26,13 @@ The public conversion response is a tagged union. Its first executable schema mu
 
 | Status | Required contract |
 | --- | --- |
-| `converted` | `schema_version`, `request_id`, `status`, exact `source_space_id`, exact `target_space_id`, `vector_origin=translated`, immutable `adapter_artifact` identity/digest, `policy_id`, `decision_receipt_id`, and validated result vector |
+| `converted` | `schema_version`, `request_id`, `status`, exact `source_space_id`, exact `target_space_id`, immutable `target_vector_schema_id`, `vector_origin=translated`, immutable `adapter_artifact` identity/digest, `policy_id`, `decision_receipt_id`, and validated result vector |
 | `abstained` | `schema_version`, `request_id`, `status`, exact source/target space IDs, no translated vector, and a typed abstention reason |
 | `error` | `schema_version`, `request_id`, `status`, stable error code, bounded safe message, and no translated vector |
+
+A generic response-envelope schema is not sufficient release evidence for a converted vector because JSON Schema cannot derive `minItems`/`maxItems` from a sibling space identity at validation time. Therefore every executable release must materialize an immutable **target-space-specific vector schema** from the exact `EmbeddingSpaceIdentityV1` record. That schema has its own stable `target_vector_schema_id`, binds `target_space_id` as a constant, and sets the converted vector's `minItems` and `maxItems` to the target identity's exact `dimension`. The response carries that schema identifier, and the release OpenAPI references the same immutable schema component. A client must resolve/use the release-pinned target vector schema before accepting a converted vector; the checked-in generic pre-release envelope alone never authorizes a vector as dimension-valid.
+
+Only finite RFC 8259 JSON numbers are valid vector elements. NaN and positive/negative infinity are not JSON values and must fail before or during serialization/parsing rather than crossing the public contract. Runtime Rust validation independently rechecks finite values and exact target dimension before numerical work or receipt creation.
 
 The initial abstention vocabulary is `low_confidence`, `out_of_distribution`, `policy_hold`, `incompatible_space`, and `no_approved_adapter`. The initial error vocabulary is `invalid_request`, `unauthenticated`, `forbidden`, `space_not_found`, `adapter_not_found`, `policy_not_approved`, and `internal_error`. A client must branch on `status` and the typed code; it must never reinterpret abstention as a zero vector, success, or same-space comparison.
 
@@ -56,6 +60,7 @@ Space identity, vector validation, adapter eligibility, migration-policy decisio
 - EmbedRelay can be deployed and called without naruon, gyeot, RankWeave, or contextual-orchestrator source once an executable release exists.
 - HTTP consumers always receive an OpenAPI authority; JSON Schema alone cannot masquerade as an HTTP API description.
 - Conversion, abstention, and error outcomes have stable machine semantics before clients are implemented.
+- A converted vector is accepted only against a release-pinned target-space schema whose exact length is derived from immutable space identity evidence.
 - Tenant and actor trust is verified at the service boundary rather than delegated to arbitrary caller headers.
 - Hubs cannot drift onto an unpublished in-tree function signature.
 - Missing executable artifacts on the documentation-only branch remain an honest pre-release state, not a license to invent endpoints or require sibling checkouts.

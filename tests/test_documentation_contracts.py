@@ -14,8 +14,10 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = REPOSITORY_ROOT / "docs" / "contracts" / "conversion-response-v1.schema.json"
 WORKFLOW_PATH = REPOSITORY_ROOT / ".github" / "workflows" / "docs-quality.yml"
 SPACE_PREFIX = "urn:cwl:embed-space:v1:sha256:"
+VECTOR_SCHEMA_PREFIX = "urn:cwl:embed-vector-schema:v1:sha256:"
 VALID_DIGEST = "a" * 64
 VALID_SPACE_ID = f"{SPACE_PREFIX}{VALID_DIGEST}"
+VALID_VECTOR_SCHEMA_ID = f"{VECTOR_SCHEMA_PREFIX}{'c' * 64}"
 CANONICAL_BASELINES = (
     "AGENTS.md",
     "CLAUDE.md",
@@ -163,6 +165,7 @@ def _valid_converted() -> dict[str, Any]:
         "status": "converted",
         "source_space_id": VALID_SPACE_ID,
         "target_space_id": f"{SPACE_PREFIX}{'b' * 64}",
+        "target_vector_schema_id": VALID_VECTOR_SCHEMA_ID,
         "vector_origin": "translated",
         "adapter_artifact": _valid_adapter(),
         "vector": [0.25, -0.5, 0.75],
@@ -174,6 +177,7 @@ def _valid_abstained() -> dict[str, Any]:
     """Return a canonical abstained response fixture."""
 
     value = _valid_converted()
+    value.pop("target_vector_schema_id")
     value.update(
         status="abstained",
         vector_origin=None,
@@ -345,6 +349,7 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
         self.assertIn("fetch-depth: 0", workflow)
         self.assertIn("github.event.pull_request.base.sha", workflow)
         self.assertIn("github.event.before", workflow)
+        self.assertIn("tests/test_schema_guardrails.py", workflow)
         self.assertNotIn("run: git diff --check\n", workflow)
 
 

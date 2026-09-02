@@ -34,7 +34,14 @@ jobs:
           test "$actual" = "$expected"
 
       - name: Run documentation contract regressions
-        run: python3 -m unittest tests/test_documentation_contracts.py -v
+        env:
+          EMBEDRELAY_DOCS_EVENT: ${{ github.event_name }}
+          EMBEDRELAY_DOCS_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: >-
+          python3 -m unittest
+          tests/test_documentation_contracts.py
+          tests/test_schema_guardrails.py
+          -v
 
       - name: Verify committed patch formatting
         shell: bash

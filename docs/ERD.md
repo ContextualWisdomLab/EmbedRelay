@@ -1,6 +1,6 @@
 # EmbedRelay conceptual ERD
 
-Status: future relational persistence target; **no current database is claimed**  
+Status: future relational persistence target; **no current database is claimed**
 Last reconciled: 2026-09-02
 
 This model exists to constrain naming, tenant isolation, normalization and evidence ownership before persistence implementation. Every object name contains at least two semantic words and uses `snake_case`. The target remains third normal form; vector-store payload/index persistence stays outside this relational authority.

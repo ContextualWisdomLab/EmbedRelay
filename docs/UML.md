@@ -1,6 +1,6 @@
 # EmbedRelay UML baseline
 
-Status: pre-release target model; not as-built runtime evidence  
+Status: pre-release target model; not as-built runtime evidence
 Last reconciled: 2026-09-02
 
 ## Bounded-context component view

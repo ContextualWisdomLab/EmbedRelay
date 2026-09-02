@@ -1,6 +1,6 @@
 # EmbedRelay Technical Requirements Document
 
-Status: pre-release target baseline; not as-built runtime evidence  
+Status: pre-release target baseline; not as-built runtime evidence
 Last reconciled: 2026-09-02
 
 ## Runtime shape

@@ -1,6 +1,6 @@
 # EmbedRelay Product Requirements Document
 
-Status: pre-release product baseline  
+Status: pre-release product baseline
 Last reconciled: 2026-09-02
 
 ## Product problem

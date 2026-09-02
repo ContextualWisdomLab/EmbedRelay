@@ -1,6 +1,6 @@
 # EmbedRelay test strategy
 
-Status: pre-release test baseline  
+Status: pre-release test baseline
 Last reconciled: 2026-09-02
 
 ## Principles

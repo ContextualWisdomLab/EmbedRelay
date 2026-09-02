@@ -1,6 +1,6 @@
 # EmbedRelay operability baseline
 
-Status: pre-release target; no operated-service claim  
+Status: pre-release target; no operated-service claim
 Last reconciled: 2026-09-02
 
 ## Current state
