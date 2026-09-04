@@ -58,6 +58,17 @@ fn ci_uses_committed_lockfile_for_reproducible_dependency_resolution() {
 }
 
 #[test]
+fn ci_only_cancels_superseded_ready_pr_runs() {
+    let ci = read_document(".github/workflows/ci.yml");
+
+    assert!(ci.contains("ready_for_review, converted_to_draft, closed"));
+    assert!(ci.contains("${{ github.workflow }}-${{ github.repository }}-"));
+    assert!(ci.contains("cancel-in-progress: ${{ github.event_name == 'pull_request' }}"));
+    assert!(ci.contains("github.event.pull_request.draft == false"));
+    assert!(ci.contains("github.event.action != 'closed'"));
+}
+
+#[test]
 fn canonical_product_architecture_documents_exist() {
     let required = [
         "docs/PRD.md",
