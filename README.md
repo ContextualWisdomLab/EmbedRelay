@@ -151,3 +151,7 @@ Composition products such as `naruon` or `gyeot` may consume the released contra
 ## License
 
 EmbedRelay source and documentation in this repository are licensed under the [Apache License 2.0](LICENSE). Third-party works retain their own licenses; future dependencies and imported assets must remain compatible with ContextualWisdomLab's commercial-use policy and retain required notices/attribution.
+
+## Repository governance
+
+Executable milestones are integrated through protected pull requests. The protected default branch does not host temporary branch-writing materializers, self-deleting finalizers, or one-shot bootstrap authority. Residual workflow registry records are handled by the organization workflow-lifecycle control plane and tracked in `ContextualWisdomLab/.github#945` when needed.

@@ -14,7 +14,6 @@ from typing import Any
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = REPOSITORY_ROOT / "docs" / "contracts" / "conversion-response-v1.schema.json"
 WORKFLOW_PATH = REPOSITORY_ROOT / ".github" / "workflows" / "docs-quality.yml"
-MATERIALIZER_WORKFLOW_PATH = REPOSITORY_ROOT / ".github" / "workflows" / "materialize-m1.yml"
 SPACE_PREFIX = "urn:cwl:embed-space:v1:sha256:"
 VECTOR_SCHEMA_PREFIX = "urn:cwl:embed-vector-schema:v1:sha256:"
 VALID_DIGEST = "a" * 64
@@ -409,11 +408,6 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
         self.assertIn("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", workflow)
         self.assertIn("github.event.pull_request.draft == false", workflow)
         self.assertIn("github.event.action != 'closed'", workflow)
-
-    def test_materializer_condition_is_a_quoted_github_expression(self) -> None:
-        workflow = MATERIALIZER_WORKFLOW_PATH.read_text(encoding="utf-8")
-        self.assertIn("if: \"${{ github.event.head_commit.message == 'bootstrap:", workflow)
-
 
 if __name__ == "__main__":
     unittest.main()
