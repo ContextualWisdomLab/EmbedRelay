@@ -97,3 +97,7 @@ The repository currently treats missing docs, unsafe Rust, missing public docume
 EmbedRelay source declares `Apache-2.0 OR MIT` in the Rust workspace metadata. This branch materializes that existing dual-license grant as [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT).
 
 The grant applies to ContextualWisdomLab-authored EmbedRelay source and documentation. Rust crates, PostgreSQL, provider/vector-store SDKs, future model or adapter artifacts, datasets, standards, external services, and other third-party material retain their own licenses and terms and are not relicensed by EmbedRelay.
+
+## Repository governance
+
+Executable milestones are integrated through protected pull requests. The protected default branch does not host temporary branch-writing materializers, self-deleting finalizers, or one-shot bootstrap authority. Residual workflow registry records are handled by the organization workflow-lifecycle control plane and tracked in `ContextualWisdomLab/.github#945` when needed.
