@@ -1,8 +1,25 @@
 # EmbedRelay
 
-Embedding continuity infrastructure for safe cross-model vector migration.
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ContextualWisdomLab/EmbedRelay)
 
-The first executable milestone is developed through protected pull requests; the default branch remains intentionally minimal until exact-head CI and review gates pass.
+EmbedRelay provides embedding-continuity infrastructure for safe, evidence-backed migration between vector models and index generations.
+
+## Responsibility
+
+EmbedRelay owns reusable contracts and runtime support for:
+
+- stable embedding-space identity and versioned migration plans;
+- compatibility checks before vectors cross model or index boundaries;
+- provenance that records the producing model, dimensions, normalization, and migration lineage;
+- fail-closed cutover and rollback evidence for consumers.
+
+Product-domain meaning, Ubiquitous Language, source records, authorization, and release decisions remain with each product repository. EmbedRelay does not become a catalog, ontology publisher, model router, or product data authority.
+
+## Public documentation
+
+- [Repository overview](docs/index.md)
+- [DeepWiki](https://deepwiki.com/ContextualWisdomLab/EmbedRelay)
+- [ContextualWisdomLab organization](https://github.com/ContextualWisdomLab)
 
 ## Repository governance
 
