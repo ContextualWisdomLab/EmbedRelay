@@ -2,25 +2,45 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ContextualWisdomLab/EmbedRelay)
 
-EmbedRelay provides embedding-continuity infrastructure for safe, evidence-backed migration between vector models and index generations.
+EmbedRelay is the bounded home for embedding-space identity and migration contracts. Its goal is to let a product change embedding models or index generations without silently mixing incompatible vectors or losing provenance.
+
+## Current status
+
+EmbedRelay is an early documentation-stage repository. No executable package or release is currently published. There is no supported install command, hosted service, stable API, or production integration yet.
 
 ## Responsibility
 
-EmbedRelay owns reusable contracts and runtime support for:
+EmbedRelay is intended to own reusable contracts and runtime support for:
 
 - stable embedding-space identity and versioned migration plans;
 - compatibility checks before vectors cross model or index boundaries;
-- provenance that records the producing model, dimensions, normalization, and migration lineage;
-- fail-closed cutover and rollback evidence for consumers.
+- provenance for the producing model, dimensions, normalization, and migration lineage;
+- fail-closed cutover, rollback, and verification evidence.
 
 Product-domain meaning, Ubiquitous Language, source records, authorization, and release decisions remain with each product repository. EmbedRelay does not become a catalog, ontology publisher, model router, or product data authority.
 
-## Public documentation
+## Evaluate the proposal
+
+1. Read the [repository overview](docs/index.md).
+2. Review the [product and technical Gap baseline](docs/product-technical-gap-baseline.md).
+3. Confirm that a proposed consumer keeps domain truth and authorization locally and depends only on a future immutable EmbedRelay contract.
+
+This is documentation review, not a software quickstart.
+
+## Integration
+
+Consumers must integrate only through an immutable, versioned release and an Anti-Corruption Layer. No such release exists today, so production consumers must not copy this repository's source, query an internal database, or depend on the pull-request branch.
+
+## Documentation
 
 - [Repository overview](docs/index.md)
+- [Product and technical Gap baseline](docs/product-technical-gap-baseline.md)
 - [DeepWiki](https://deepwiki.com/ContextualWisdomLab/EmbedRelay)
-- [ContextualWisdomLab organization](https://github.com/ContextualWisdomLab)
 
-## Repository governance
+## Support
 
-Executable milestones are developed on ordinary protected branches and integrated through normal protected pull requests. The protected default branch must not host or execute temporary branch-writing materializers, self-deleting finalizers, or one-shot bootstrap authority. Any such authority is retired through a reviewed pull request after its bounded purpose. The organization workflow-lifecycle control plane then disables any residual GitHub Actions registry record or explicitly classifies it as orphaned, with follow-up tracked in `ContextualWisdomLab/.github#945`.
+Use [GitHub Issues](https://github.com/ContextualWisdomLab/EmbedRelay/issues) for reproducible documentation defects and bounded feature proposals. Do not include credentials, personal data, proprietary embeddings, or customer records.
+
+## License
+
+No repository-level `LICENSE` is present. Public visibility does not establish permission to copy, modify, redistribute, or use the source. A rights and provenance review must precede any license selection or release; this repository does not infer or fabricate those rights.
