@@ -5,6 +5,7 @@ repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readme_path="$repository_root/README.md"
 overview_path="$repository_root/docs/index.md"
 baseline_path="$repository_root/docs/product-technical-gap-baseline.md"
+license_path="$repository_root/LICENSE"
 failures=0
 
 require_file() {
@@ -36,18 +37,19 @@ forbid_text() {
 require_file "$readme_path"
 require_file "$overview_path"
 require_file "$baseline_path"
+require_file "$license_path"
 
 require_text "$readme_path" "## Current status"
 require_text "$readme_path" "No executable package or release is currently published."
 require_text "$readme_path" "## Integration"
 require_text "$readme_path" "## License"
-require_text "$readme_path" 'No repository-level `LICENSE` is present.'
+require_text "$readme_path" "Apache License 2.0"
 require_text "$readme_path" "## Support"
 forbid_text "$readme_path" "## Repository governance"
 forbid_text "$readme_path" ".github#"
 
 require_text "$overview_path" "No executable package or release is currently published."
-require_text "$overview_path" 'No repository-level `LICENSE` is present.'
+require_text "$overview_path" "Apache License 2.0"
 
 for token in "PRD" "TRD" "UML" "ERD" "Context Map" "Gap" "Action" "Status" "License" "Release" "Pages"; do
   require_text "$baseline_path" "$token"

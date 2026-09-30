@@ -1,0 +1,64 @@
+name: Documentation Quality
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft, closed]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  documentation-contracts:
+    if: github.event_name != 'pull_request' || (github.event.action != 'closed' && github.event.pull_request.draft == false)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected='${{ github.event.pull_request.head.sha || github.sha }}'
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$expected"
+
+      - name: Run documentation contract regressions
+        env:
+          EMBEDRELAY_DOCS_EVENT: ${{ github.event_name }}
+          EMBEDRELAY_DOCS_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: >-
+          python3 -m unittest
+          tests/test_documentation_contracts.py
+          tests/test_schema_guardrails.py
+          -v
+
+      - name: Verify committed patch formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
+            base='${{ github.event.pull_request.base.sha }}'
+            git cat-file -e "${base}^{commit}"
+            git diff --check "${base}...HEAD"
+          else
+            before='${{ github.event.before }}'
+            if [[ "$before" =~ ^0+$ ]]; then
+              git show --check --format= HEAD
+            else
+              git cat-file -e "${before}^{commit}"
+              git diff --check "$before" HEAD
+            fi
+          fi
