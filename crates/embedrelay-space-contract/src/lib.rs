@@ -14,6 +14,4 @@ pub use registry::{
     AuditRecordError, SpaceRegistrationAuditEvent, SpaceRegistrationAuditRecorder,
     TenantRegistryError, TenantSpaceRegistry,
 };
-pub use vector::{
-    ValidatedEmbeddingVector, VectorCompatibilityError, VectorValidationError,
-};
+pub use vector::{ValidatedEmbeddingVector, VectorCompatibilityError, VectorValidationError};

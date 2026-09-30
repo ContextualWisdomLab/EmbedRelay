@@ -1,6 +1,6 @@
 # EmbedRelay Architecture
 
-**Status:** Accepted target architecture; current M1 active-PR scope is explicitly labelled.  
+**Status:** Accepted target architecture; current M1 active-PR scope is explicitly labelled.
 **Last reviewed:** 2026-09-02
 
 ## Architectural goal

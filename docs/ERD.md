@@ -1,6 +1,6 @@
 # EmbedRelay Data Model and ERD
 
-**Status:** Accepted target model with an executable M1 physical persistence slice on active PR #1.  
+**Status:** Accepted target model with an executable M1 physical persistence slice on active PR #1.
 **Last reviewed:** 2026-09-02
 
 EmbedRelay separates the current Rust domain contract, the current PostgreSQL M1 registry/manifest/audit slice, and the broader planned control-plane model. Persistent object names use descriptive two-or-more-word `snake_case` names.

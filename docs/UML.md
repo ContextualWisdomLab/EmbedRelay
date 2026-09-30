@@ -1,6 +1,6 @@
 # EmbedRelay UML and Runtime Views
 
-**Status:** Accepted target views; current M1 as-built behavior is marked separately.  
+**Status:** Accepted target views; current M1 as-built behavior is marked separately.
 **Last reviewed:** 2026-08-15
 
 ## Current M1 registration sequence
@@ -131,6 +131,8 @@ Vector contents, UUID timestamps, model names, and fingerprints never create aut
 
 ## Target deployment view
 
+<!-- status:planned -->
+
 ```mermaid
 flowchart TB
     subgraph standalone[Standalone deployment]
@@ -157,7 +159,10 @@ flowchart TB
     WORKER --> OBS
 ```
 
-Current PR #1 has no deployable API, PostgreSQL control plane, vector-store connector, provider connector, or compute worker; this deployment view is target architecture.
+Current PR #1 has an active-PR PostgreSQL registry/manifest/audit persistence
+slice, but no deployable API, vector-store connector, provider connector, or
+compute worker. The complete deployment view remains target architecture and
+is not protected-main or release evidence.
 
 ## Maturity rule
 

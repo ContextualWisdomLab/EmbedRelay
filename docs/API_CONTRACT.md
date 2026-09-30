@@ -1,6 +1,6 @@
 # EmbedRelay API and Port Contract
 
-**Status:** Accepted target contract; current PR #1 exposes Rust domain APIs only.  
+**Status:** Accepted target contract; current PR #1 exposes Rust domain APIs only.
 **Last reviewed:** 2026-08-09
 
 ## Principles

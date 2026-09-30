@@ -1,6 +1,6 @@
 # ADR-0005: Use dual-index transition and target-native backfill
 
-**Status:** Accepted  
+**Status:** Accepted
 **Date:** 2026-08-09
 
 ## Context

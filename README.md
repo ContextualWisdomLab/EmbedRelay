@@ -6,6 +6,12 @@ EmbedRelay helps retrieval and RAG platforms move from one embedding model or re
 
 > **Status:** pre-release. The M1 implementation described below exists on the current Draft PR and is not protected-main or release evidence yet.
 
+## Current status
+
+No executable package or release is currently published. This Draft contains
+reviewable Rust and PostgreSQL source, but consumers must not depend on a branch
+or treat it as an immutable EmbedRelay release.
+
 ## Why EmbedRelay
 
 Embedding providers change model revisions, preprocessing, roles, normalization, precision, dimensions, and metric behavior. Re-embedding an enterprise corpus all at once may be expensive or operationally impossible, while directly comparing vectors from different spaces can silently damage retrieval quality.
@@ -46,6 +52,12 @@ cargo test --workspace --locked
 ```
 
 The repository CI also validates the current PostgreSQL 18.6 registry, canonical-manifest persistence, logical backup/restore contract, and exact LLVM coverage. Those database tests require a reachable PostgreSQL 18.x instance and are documented by the repository workflow and test scripts; a passing local unit test is not a substitute for the full protected integration gate.
+
+## Integration
+
+Consumers integrate only through future released, versioned public contracts.
+Until such a release exists, use a product-owned port, feature flag, and test
+double rather than copying EmbedRelay source or reading its private database.
 
 ## Product boundary
 
@@ -92,12 +104,18 @@ Changes should preserve the product invariants in the PRD and architecture recor
 
 The repository currently treats missing docs, unsafe Rust, missing public documentation, stale lock state, PostgreSQL contract drift, incomplete exact coverage, and required security/review failures as integration blockers rather than documentation-only warnings.
 
+## Support
+
+Use the repository issue tracker for reproducible defects and product-contract
+questions. Security reports follow [SECURITY.md](SECURITY.md); do not include
+credentials, vectors, tenant data, or other sensitive evidence in public issues.
+
 ## License
 
-EmbedRelay source declares `Apache-2.0 OR MIT` in the Rust workspace metadata. This branch materializes that existing dual-license grant as [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT).
+EmbedRelay source declares `Apache-2.0 OR MIT` in the Rust workspace metadata.
+The grants are the [Apache License 2.0](LICENSE-APACHE) and the
+[MIT License](LICENSE-MIT).
 
 The grant applies to ContextualWisdomLab-authored EmbedRelay source and documentation. Rust crates, PostgreSQL, provider/vector-store SDKs, future model or adapter artifacts, datasets, standards, external services, and other third-party material retain their own licenses and terms and are not relicensed by EmbedRelay.
 
-## Repository governance
-
-Executable milestones are integrated through protected pull requests. The protected default branch does not host temporary branch-writing materializers, self-deleting finalizers, or one-shot bootstrap authority. Residual workflow registry records are handled by the organization workflow-lifecycle control plane and tracked in `ContextualWisdomLab/.github#945` when needed.
+EmbedRelay is ContextualWisdomLab's embedding-continuity product for governed cross-model vector migration. It is designed for retrieval systems that need to change an embedding model, revision, input role, preprocessing contract, dimension, precision, normalization, or metric without silently corrupting retrieval while a corpus is being migrated.

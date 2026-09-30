@@ -123,14 +123,8 @@ impl EmbeddingSpaceManifestInput {
         for (field_name, value) in text_fields {
             validate_text_field(field_name, value)?;
         }
-        validate_sha256_field(
-            "instruction_template_hash",
-            &self.instruction_template_hash,
-        )?;
-        validate_sha256_field(
-            "preprocessing_policy_hash",
-            &self.preprocessing_policy_hash,
-        )?;
+        validate_sha256_field("instruction_template_hash", &self.instruction_template_hash)?;
+        validate_sha256_field("preprocessing_policy_hash", &self.preprocessing_policy_hash)?;
         if self.vector_dimension == 0 {
             return Err(ManifestValidationError::ZeroVectorDimension);
         }
@@ -176,11 +170,12 @@ impl EmbeddingSpaceManifest {
     /// Returns [`ManifestValidationError`] when JSON does not satisfy the
     /// strict schema or when material identity values violate their contracts.
     pub fn from_json(manifest_json: &str) -> Result<Self, ManifestValidationError> {
-        let input: EmbeddingSpaceManifestInput = serde_json::from_str(manifest_json).map_err(
-            |source| ManifestValidationError::InvalidJson {
-                message: source.to_string(),
-            },
-        )?;
+        let input: EmbeddingSpaceManifestInput =
+            serde_json::from_str(manifest_json).map_err(|source| {
+                ManifestValidationError::InvalidJson {
+                    message: source.to_string(),
+                }
+            })?;
         input.validate()?;
 
         let mut hasher = Sha256::new();
@@ -215,7 +210,9 @@ pub enum ManifestValidationError {
         message: String,
     },
     /// A textual identity field is empty, has outer whitespace, or contains controls.
-    #[error("manifest field `{field_name}` must be printable, non-empty, and have no outer whitespace")]
+    #[error(
+        "manifest field `{field_name}` must be printable, non-empty, and have no outer whitespace"
+    )]
     InvalidTextField {
         /// Stable schema field name that failed validation.
         field_name: &'static str,

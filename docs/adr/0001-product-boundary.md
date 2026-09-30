@@ -1,6 +1,6 @@
 # ADR-0001: Treat translation as a migration bridge
 
-**Status:** Accepted  
+**Status:** Accepted
 **Date:** 2026-08-09
 
 ## Context

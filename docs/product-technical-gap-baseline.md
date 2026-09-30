@@ -1,8 +1,8 @@
 # EmbedRelay Product / Technical Gap Baseline
 
-**Status:** active-PR commercialization baseline  
-**Scope:** ContextualWisdomLab/EmbedRelay, with causal shared-control-plane blockers linked explicitly  
-**Last reconciled:** 2026-09-02  
+**Status:** active-PR commercialization baseline
+**Scope:** ContextualWisdomLab/EmbedRelay, with causal shared-control-plane blockers linked explicitly
+**Last reconciled:** 2026-09-30
 **Release state:** pre-release; PR #1 remains Draft.
 
 Transient CI/review states are resolved live from GitHub rather than committed as durable truth. Every head change invalidates predecessor-head merge evidence.
@@ -40,7 +40,7 @@ The bounded commercial promise is that operators can change embedding spaces wit
 - **Supporting — Migration Operations:** dual-index state, rollback windows, backfill scheduling, and cutover evidence.
 - **Generic — Provider / Vector-store / Telemetry / KMS ports:** versioned integrations isolated behind anti-corruption layers.
 
-### Context map
+### Context Map
 
 ```mermaid
 flowchart LR
@@ -55,6 +55,10 @@ flowchart LR
 ```
 
 The shared kernel is intentionally small: canonical space fingerprint, opaque identifiers, and versioned public value contracts. Provider SDK types, persistence implementation details, and another ContextualWisdomLab repository's private data model are not shared-kernel material.
+
+The canonical evidence graph is PRD → TRD → UML/ERD → Context Map → Gap →
+Action → Status. These artifacts describe active-PR evidence separately from
+protected-main and released behavior.
 
 ### Ubiquitous language and aggregates
 
@@ -98,6 +102,15 @@ Forced RLS applies to all three current relations. Manifest visibility is derive
 ## Ecosystem boundary
 
 EmbedRelay remains standalone. Optional ContextualWisdomLab consumers/providers such as `contextual-orchestrator`, Keyverse, pg-llm-batch, EgressWeave, and naruon integrate through typed public ports. Reusable supplier defects belong in their source repository. No EmbedRelay persistence object is a shared database contract for another repository.
+
+## License, Release, and Pages status
+
+- **License:** ContextualWisdomLab-authored source and documentation declare
+  `Apache-2.0 OR MIT`; third-party material keeps its own terms.
+- **Release:** no immutable package or service release exists; active-PR source
+  is not a consumer dependency.
+- **Pages:** `docs/index.md` is a publication source only. No GitHub Pages
+  publication is claimed without a verified live HTTPS deployment.
 
 ## Commercialization gaps ordered by leverage
 

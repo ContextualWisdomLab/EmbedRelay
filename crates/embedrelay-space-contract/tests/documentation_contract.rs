@@ -1,3 +1,4 @@
+#![allow(clippy::panic)]
 //! Contract tests for durable product and architecture documentation.
 
 use std::{fs, path::PathBuf, process::Command};
@@ -58,14 +59,18 @@ fn ci_uses_committed_lockfile_for_reproducible_dependency_resolution() {
 }
 
 #[test]
-fn ci_only_cancels_superseded_ready_pr_runs() {
+fn ci_runs_exact_head_contracts_for_draft_and_ready_pull_requests() {
     let ci = read_document(".github/workflows/ci.yml");
 
     assert!(ci.contains("ready_for_review, converted_to_draft, closed"));
     assert!(ci.contains("${{ github.workflow }}-${{ github.repository }}-"));
     assert!(ci.contains("cancel-in-progress: ${{ github.event_name == 'pull_request' }}"));
-    assert!(ci.contains("github.event.pull_request.draft == false"));
+    assert!(
+        !ci.contains("github.event.pull_request.draft == false"),
+        "draft pull requests are reviewable stack members and require exact-head evidence"
+    );
     assert!(ci.contains("github.event.action != 'closed'"));
+    assert!(ci.contains("EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}"));
 }
 
 #[test]
@@ -92,7 +97,10 @@ fn canonical_product_architecture_documents_exist() {
         .filter(|relative_path| !workspace_root().join(relative_path).is_file())
         .collect();
 
-    assert!(missing.is_empty(), "missing canonical documentation: {missing:?}");
+    assert!(
+        missing.is_empty(),
+        "missing canonical documentation: {missing:?}"
+    );
 }
 
 #[test]

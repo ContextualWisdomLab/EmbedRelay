@@ -1,7 +1,7 @@
 # EmbedRelay Product Requirements Document
 
-**Status:** Accepted product baseline; implementation maturity is tracked separately.  
-**Product category:** Embedding Continuity Infrastructure  
+**Status:** Accepted product baseline; implementation maturity is tracked separately.
+**Product category:** Embedding Continuity Infrastructure
 **Last reviewed:** 2026-09-02
 
 ## 1. Product definition

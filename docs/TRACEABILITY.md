@@ -1,6 +1,6 @@
 # EmbedRelay Requirements, Decisions, and Evidence Traceability
 
-**Status:** Accepted active-PR baseline  
+**Status:** Accepted active-PR baseline
 **Last reviewed:** 2026-09-02
 
 <!-- status:active-pr-implemented -->

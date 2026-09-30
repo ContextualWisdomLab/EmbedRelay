@@ -1,6 +1,6 @@
 # EmbedRelay Documentation Fitness Matrix
 
-**Status:** Canonical documentation audit for the accepted product baseline and current M1 active-PR implementation.  
+**Status:** Canonical documentation audit for the accepted product baseline and current M1 active-PR implementation.
 **Last reviewed:** 2026-09-02
 
 ## Purpose

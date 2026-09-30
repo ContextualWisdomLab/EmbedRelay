@@ -114,10 +114,7 @@ impl ValidatedEmbeddingVector {
     ///
     /// Returns [`VectorCompatibilityError::DifferentEmbeddingSpace`] when the
     /// canonical fingerprints differ.
-    pub fn same_space_metric_code(
-        &self,
-        other: &Self,
-    ) -> Result<&str, VectorCompatibilityError> {
+    pub fn same_space_metric_code(&self, other: &Self) -> Result<&str, VectorCompatibilityError> {
         if self.space_fingerprint != other.space_fingerprint {
             return Err(VectorCompatibilityError::DifferentEmbeddingSpace);
         }

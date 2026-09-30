@@ -1,3 +1,4 @@
+#![allow(clippy::expect_used)]
 //! Integration contract for EmbedRelay's RFC 9562 UUIDv7 identifier boundary.
 
 use embedrelay_space_contract::{RelayIdentifier, RelayIdentifierParseError};
@@ -37,7 +38,8 @@ fn default_identifier_uses_the_same_uuid_v7_contract_as_new() {
 
 #[test]
 fn parser_rejects_non_uuid_input_without_reflecting_it() {
-    let error = RelayIdentifier::parse("customer-controlled-secret").expect_err("invalid UUID must fail");
+    let error =
+        RelayIdentifier::parse("customer-controlled-secret").expect_err("invalid UUID must fail");
 
     assert_eq!(error, RelayIdentifierParseError::InvalidUuid);
     assert_eq!(error.to_string(), "identifier must be a valid UUID");

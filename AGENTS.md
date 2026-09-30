@@ -6,6 +6,7 @@ EmbedRelay is embedding continuity infrastructure. Documentation must distinguis
 
 ## Numerical rules
 
+- Mathematical/vector/linear-algebra/token-size production computation is Rust-owned.
 - Production transformation arithmetic is Rust-first.
 - Do not compare raw vectors from different embedding spaces.
 - Equal dimensions do not prove compatibility.
@@ -13,6 +14,8 @@ EmbedRelay is embedding continuity infrastructure. Documentation must distinguis
 - CPU is the reference implementation; an accelerator path requires parity and recovery evidence.
 - Low-confidence translation may abstain.
 - Production composition defaults to one adapter hop.
+- Do not introduce undocumented rule-of-thumb constants; thresholds require
+  explicit product, scientific, statistical, or SLO provenance.
 
 ## Development workflow
 

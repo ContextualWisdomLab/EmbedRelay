@@ -6,6 +6,7 @@ All notable changes to EmbedRelay are recorded here. The project has not publish
 
 ### Added
 
+- Public documentation, contribution, security, licensing, conversion-response schema, and documentation-quality contracts integrated from the preserved documentation successor stack.
 - Strict RFC 9562 UUIDv7 identifiers for registry and audit keys. Generated identifiers are process-locally creation-ordered; external identifiers fail closed unless both the RFC variant and version-7 contract are satisfied, and parse failures do not reflect caller-controlled input.
 - Fail-closed Rust `float32` embedding-vector validation bound to the complete canonical embedding-space fingerprint. The contract rejects dimension mismatches, non-finite and subnormal components, zero-norm vectors, and scalar-precision mismatches, and permits a metric operation only after both vectors prove identical embedding-space identity rather than merely matching dimensions.
 - Tenant-isolated audit-before-mutation space registration. The storage-independent Rust reference contract keys registration by tenant plus complete canonical space fingerprint, rejects duplicates before emitting another intent, requires audit acceptance before state visibility, leaves state unchanged when audit recording fails, and permits equal space fingerprints to remain isolated across tenants.
@@ -17,6 +18,7 @@ All notable changes to EmbedRelay are recorded here. The project has not publish
 
 ### Changed
 
+- Draft and ready pull requests now execute the same exact-head Rust and PostgreSQL contract workflow; only closed pull-request events are excluded, so stacked Draft PRs retain review evidence.
 - PostgreSQL registry and audit persistence now store the Rust domain's exact canonical `sha256:<64 lowercase hex>` space fingerprint unchanged. Bare 64-hex digests are rejected, preventing storage adapters or callers from silently stripping and later reconstructing identity material at the domain/persistence boundary; registry, concurrency, and backup/restore tests use the same canonical representation end to end.
 - Product, technical, architecture, ERD, traceability, operability, and documentation-fitness truth boundaries now distinguish the active-PR PostgreSQL M1 persistence/recovery acceptance slice from the broader still-planned durable control plane and later adapter/migration product surfaces.
 - Registration persistence is explicitly duplicate-rejecting rather than an implicit UPSERT. A future idempotent replay API must introduce a stable request key and a separate tested contract instead of heuristic conflict handling.

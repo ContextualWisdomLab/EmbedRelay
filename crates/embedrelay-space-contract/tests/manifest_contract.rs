@@ -1,3 +1,4 @@
+#![allow(clippy::expect_used, clippy::unwrap_used)]
 //! Regression contracts for strict embedding-space manifest identity.
 
 use embedrelay_space_contract::{EmbeddingSpaceManifest, ManifestValidationError};
@@ -46,10 +47,7 @@ fn strict_manifest_accepts_valid_material_identity() {
 
 #[test]
 fn strict_manifest_rejects_an_unknown_material_field() {
-    let manifest = VALID_MANIFEST.replace(
-        "\n}",
-        ",\n  \"unexpected_material_field\":true\n}",
-    );
+    let manifest = VALID_MANIFEST.replace("\n}", ",\n  \"unexpected_material_field\":true\n}");
 
     assert!(matches!(
         EmbeddingSpaceManifest::from_json(&manifest),

@@ -1,6 +1,6 @@
 # EmbedRelay Operability and Migration Runbook
 
-**Status:** Accepted target operating baseline; PR #1 has a narrow executable PostgreSQL M1 slice but is not deployable M1 completion.  
+**Status:** Accepted target operating baseline; PR #1 has a narrow executable PostgreSQL M1 slice but is not deployable M1 completion.
 **Last reviewed:** 2026-09-02
 
 ## Operating principles
@@ -56,7 +56,10 @@ Current source-level acceptance includes:
 
 These source-level contracts become operational evidence only after the current exact-head CI actually executes successfully. Queued/pending/predecessor runs are not passing evidence.
 
-This is not a general production database administration procedure. The current M1 migration does not create complete canonical-manifest, adapter, evaluation, migration, routing, backfill, or vector-reference persistence.
+This is not a general production database administration procedure. The
+current M1 migrations create complete v1 canonical-manifest persistence plus
+tenant registration and audit evidence. They do not create adapter, evaluation,
+migration, routing, backfill, or vector-reference persistence.
 
 ## Current registry idempotency and recovery semantics
 

@@ -1,6 +1,6 @@
 # ADR-0007: Make abstention a first-class production outcome
 
-**Status:** Accepted  
+**Status:** Accepted
 **Date:** 2026-08-09
 
 ## Context

@@ -1,3 +1,4 @@
+#![allow(clippy::expect_used)]
 //! Regression contracts for tenant-scoped, audit-before-mutation space registration.
 
 use embedrelay_space_contract::{

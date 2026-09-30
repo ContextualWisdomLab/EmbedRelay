@@ -1,6 +1,6 @@
 # ADR-0010: Limit production composition and require evidence-based release gates
 
-**Status:** Accepted  
+**Status:** Accepted
 **Date:** 2026-08-09
 
 ## Context

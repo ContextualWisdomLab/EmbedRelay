@@ -1,3 +1,4 @@
+#![allow(clippy::expect_used, clippy::unwrap_used)]
 //! Regression contracts for fail-closed embedding-vector validation.
 
 use embedrelay_space_contract::{
@@ -101,13 +102,9 @@ fn vector_validation_rejects_zero_norm() {
 
 #[test]
 fn float32_vector_api_rejects_other_manifest_precision() {
-    let space = EmbeddingSpaceManifest::from_json(&manifest_json(
-        "revision_1",
-        2,
-        "float16",
-        "cosine",
-    ))
-    .expect("manifest identity may describe a precision this API does not support");
+    let space =
+        EmbeddingSpaceManifest::from_json(&manifest_json("revision_1", 2, "float16", "cosine"))
+            .expect("manifest identity may describe a precision this API does not support");
 
     assert_eq!(
         ValidatedEmbeddingVector::new(&space, vec![1.0, 0.0]).unwrap_err(),
@@ -132,8 +129,7 @@ fn metric_gate_rejects_equal_dimension_vectors_from_different_spaces() {
     let old_space = manifest("revision_1", 2);
     let new_space = manifest("revision_2", 2);
     let left = ValidatedEmbeddingVector::new(&old_space, vec![1.0, 0.0]).expect("left vector");
-    let right =
-        ValidatedEmbeddingVector::new(&new_space, vec![0.0, 1.0]).expect("right vector");
+    let right = ValidatedEmbeddingVector::new(&new_space, vec![0.0, 1.0]).expect("right vector");
 
     assert_eq!(
         left.same_space_metric_code(&right),

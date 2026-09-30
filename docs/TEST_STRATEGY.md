@@ -1,6 +1,6 @@
 # EmbedRelay Test and Evaluation Strategy
 
-**Status:** Accepted quality baseline  
+**Status:** Accepted quality baseline
 **Last reviewed:** 2026-08-09
 
 ## Goal

@@ -1,6 +1,6 @@
 # Canonical Manifest Persistence Boundary
 
-**Status:** active-PR implementation evidence; exact-head CI/review promotion pending  
+**Status:** active-PR implementation evidence; exact-head CI/review promotion pending
 **Last reviewed:** 2026-09-02
 
 ## Problem

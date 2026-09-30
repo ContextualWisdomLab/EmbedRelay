@@ -1,6 +1,6 @@
 # EmbedRelay Security Contract
 
-**Status:** Accepted target security baseline; active-PR M1 implementation maturity is explicit.  
+**Status:** Accepted target security baseline; active-PR M1 implementation maturity is explicit.
 **Last reviewed:** 2026-09-02
 
 ## Security objective

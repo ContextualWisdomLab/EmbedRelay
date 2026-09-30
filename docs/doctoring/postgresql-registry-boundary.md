@@ -1,7 +1,7 @@
 # Doctoring: PostgreSQL Tenant Registry / RLS / Audit Boundary
 
-**Status:** active-PR implementation evidence; current exact head must still pass hosted verification  
-**Last reviewed:** 2026-09-02  
+**Status:** active-PR implementation evidence; current exact head must still pass hosted verification
+**Last reviewed:** 2026-09-02
 **Product boundary:** M1 Space Registry and Vector Safety
 
 ## Problem and product risk

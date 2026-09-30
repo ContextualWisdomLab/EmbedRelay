@@ -1,6 +1,6 @@
 # EmbedRelay Threat Model
 
-**Status:** Accepted baseline  
+**Status:** Accepted baseline
 **Last reviewed:** 2026-08-09
 
 ## Scope and boundaries
