@@ -2,7 +2,6 @@ name: Documentation Quality
 
 on:
   pull_request:
-    branches: [main]
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft, closed]
   push:
     branches: [main]
@@ -16,7 +15,7 @@ concurrency:
 
 jobs:
   documentation-contracts:
-    if: github.event_name != 'pull_request' || (github.event.action != 'closed' && github.event.pull_request.draft == false)
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

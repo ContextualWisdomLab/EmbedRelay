@@ -14,6 +14,7 @@ All notable EmbedRelay changes are recorded here. This repository is pre-release
 - Executable payload-contract coverage for all three response variants, required fields, closed top-level/nested objects, malformed vectors, invalid abstention codes, and cross-variant/hybrid payload rejection.
 - Regression coverage requiring the canonical repository baselines and their documentation-index links to remain present, non-empty, and consistent with Rust numerical ownership, fail-closed threshold provenance, multiword persistence naming, and pre-release truth boundaries.
 - Exact-head `Documentation Quality` GitHub Actions gate using explicit Ubuntu 24.04, immutable checkout pinning, exact-SHA verification, documentation regression execution, and committed-range whitespace validation for both pull-request and push events.
+- Documentation Quality admission for stacked and Draft pull requests, so a non-`main` base or review-admission state cannot suppress exact-head repository checks.
 - Repository `AGENTS.md` and `CLAUDE.md` development boundaries.
 - Root `ARCHITECTURE.md` context map separating EmbedRelay from RankWeave, contextual-orchestrator, keyverse, model providers, vector stores, and ingest/retrieval hosts.
 - `docs/PRD.md` and `docs/TRD.md` buyer/product and Rust-first technical requirements for the first executable migration vertical.
