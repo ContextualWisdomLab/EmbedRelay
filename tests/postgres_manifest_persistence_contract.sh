@@ -48,7 +48,7 @@ DECLARE
     "instruction_template_hash":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "pooling_strategy_code":"mean_pooling",
     "normalization_strategy_code":"l2",
-    "vector_dimension":16,
+    "vector_dimension":16.0,
     "numeric_precision_code":"float32",
     "distance_metric_code":"cosine",
     "preprocessing_policy_hash":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
@@ -182,9 +182,35 @@ $$;
 
 SELECT set_config('embedrelay.tenant_id', '017f22e2-79b0-7cc3-98c4-dc0c0c0c0765', true);
 DO $$
+DECLARE
+  exponent_manifest jsonb := '{
+    "provider_identifier":"example_provider",
+    "model_identifier":"example_model",
+    "model_revision":"revision_1",
+    "modality_code":"text",
+    "input_role_code":"document",
+    "instruction_template_hash":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "pooling_strategy_code":"mean_pooling",
+    "normalization_strategy_code":"l2",
+    "vector_dimension":1.6e1,
+    "numeric_precision_code":"float32",
+    "distance_metric_code":"cosine",
+    "preprocessing_policy_hash":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  }'::jsonb;
+  canonical_fingerprint text := 'sha256:d105d04ca1cbdf6d8ba00dec0be676045e76059d16e4de404bd71a27d22bccb1';
 BEGIN
   IF (SELECT count(*) FROM embedrelay_registry.embedding_space_manifest) <> 0 THEN
     RAISE EXCEPTION 'unregistered tenant can see canonical manifest material';
+  END IF;
+
+  PERFORM embedrelay_registry.register_tenant_space_manifest(
+    '017f22e2-79b0-7cc3-98c4-dc0c0c0c0766'::uuid,
+    canonical_fingerprint,
+    exponent_manifest
+  );
+
+  IF (SELECT vector_dimension FROM embedrelay_registry.embedding_space_manifest) <> 16 THEN
+    RAISE EXCEPTION 'exponent-form vector_dimension did not normalize to the canonical integer';
   END IF;
 END
 $$;
@@ -195,11 +221,11 @@ BEGIN
   IF (SELECT count(*) FROM embedrelay_registry.embedding_space_manifest) <> 1 THEN
     RAISE EXCEPTION 'identical cross-tenant manifests must deduplicate to one canonical row';
   END IF;
-  IF (SELECT count(*) FROM embedrelay_registry.tenant_space_registry) <> 2 THEN
-    RAISE EXCEPTION 'two tenants must retain two independent registration rows';
+  IF (SELECT count(*) FROM embedrelay_registry.tenant_space_registry) <> 3 THEN
+    RAISE EXCEPTION 'three tenants must retain three independent registration rows';
   END IF;
-  IF (SELECT count(*) FROM embedrelay_registry.space_registration_audit) <> 2 THEN
-    RAISE EXCEPTION 'two accepted tenant registrations must retain two audit intents';
+  IF (SELECT count(*) FROM embedrelay_registry.space_registration_audit) <> 3 THEN
+    RAISE EXCEPTION 'three accepted tenant registrations must retain three audit intents';
   END IF;
 END
 $$;

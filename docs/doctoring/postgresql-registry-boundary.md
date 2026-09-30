@@ -8,7 +8,7 @@
 
 The Rust `TenantSpaceRegistry` reference contract establishes tenant/fingerprint uniqueness and audit-before-observable-state semantics, but an in-memory contract alone cannot prove durable tenant isolation, append-only audit, concurrent registration behavior, recovery, or persistence fidelity. A commercial embedding-continuity control plane must not silently expose another tenant's registered embedding space, create duplicate durable audit intents under a race, rewrite historical registry/audit evidence, or transform the canonical space identity at the persistence boundary.
 
-The bounded M1 slice persists tenant/fingerprint registration and `space_registration_intent` audit evidence. It does not yet persist complete canonical manifests, adapters, evaluations, migrations, vectors, or provider state.
+Migration 0001's bounded M1 slice persisted tenant/fingerprint registration and `space_registration_intent` audit evidence. At that boundary, it did not persist complete canonical manifests, adapters, evaluations, migrations, vectors, or provider state. Migration 0002 subsequently added complete immutable v1 canonical-manifest persistence; adapters, evaluations, migrations, vectors, and provider state remain outside this slice.
 
 ## Test-first lineage
 
@@ -57,7 +57,7 @@ The relations are in 3NF for the current slice: tenant-space registration facts 
 
 The Rust domain owns fingerprint construction and returns a domain-separated string rather than a raw digest. PostgreSQL stores that exact value unchanged. The physical boundary rejects both a bare digest and non-canonical case, so a storage adapter cannot accidentally erase the `sha256:` domain marker and force downstream consumers to infer or reconstruct identity material.
 
-This representation is exercised across normal registration, duplicate registration, two-session concurrency, tenant filtering, `pg_dump`, `pg_restore`, and post-restore reconciliation. Full immutable manifest persistence remains a separate follow-through requirement; preserving the fingerprint does not pretend that the complete manifest is already durable.
+This representation is exercised across normal registration, duplicate registration, two-session concurrency, tenant filtering, `pg_dump`, `pg_restore`, and post-restore reconciliation. Migration 0002 now provides complete immutable v1 manifest persistence; see [Canonical Manifest Persistence Boundary](canonical-manifest-persistence-boundary.md). The fingerprint-only limitation applies to migration 0001.
 
 ### Transaction and item-level mutation contract
 

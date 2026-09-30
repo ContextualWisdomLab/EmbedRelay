@@ -41,7 +41,10 @@ PR #1 now carries a narrow active-PR PostgreSQL security boundary in addition to
 Current physical controls:
 
 - `tenant_space_registry` and `space_registration_audit` are tenant-scoped relations under `embedrelay_registry`;
-- both relations enable and **force** RLS;
+- `embedding_space_manifest` stores the complete immutable v1 canonical manifest once per exact fingerprint and is linked from `tenant_space_registry`;
+- `embedding_space_manifest` enables and **forces** RLS with an `EXISTS`-based tenant visibility policy;
+- `embedding_space_manifest` rejects ordinary `UPDATE`, `DELETE`, and `TRUNCATE` operations;
+- the registry and audit relations enable and **force** RLS;
 - policy expressions require an explicit `embedrelay.tenant_id` session context and apply both `USING` and `WITH CHECK` tenant equality;
 - the contract exercises access under a non-superuser, non-`BYPASSRLS` role;
 - missing tenant context fails closed;
@@ -58,7 +61,6 @@ This is deliberately not an UPSERT surface. A future idempotent network API must
 The M1 persistence implementation still must prove or add:
 
 - current exact-head PostgreSQL 18.6 RLS/concurrency/rollback results after every source/doc change;
-- complete immutable canonical-manifest persistence rather than fingerprint-only registration;
 - measured backup/restore acceptance without cross-tenant mixing;
 - bounded production service/admin/audit roles and privileged-access evidence;
 - encryption/KMS boundaries for persistence and artifact storage where required;

@@ -1,4 +1,6 @@
-use serde::Deserialize;
+use std::fmt;
+
+use serde::{Deserialize, Deserializer, de::Visitor};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
@@ -22,10 +24,55 @@ pub struct EmbeddingSpaceManifestInput {
     instruction_template_hash: String,
     pooling_strategy_code: String,
     normalization_strategy_code: String,
+    #[serde(deserialize_with = "deserialize_vector_dimension")]
     vector_dimension: u32,
     numeric_precision_code: String,
     distance_metric_code: String,
     preprocessing_policy_hash: String,
+}
+
+fn deserialize_vector_dimension<'de, D>(deserializer: D) -> Result<u32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct ExactU32Visitor;
+
+    impl Visitor<'_> for ExactU32Visitor {
+        type Value = u32;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            formatter.write_str("a JSON number exactly representing a Rust u32 integer")
+        }
+
+        fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            u32::try_from(value).map_err(E::custom)
+        }
+
+        fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            u32::try_from(value).map_err(E::custom)
+        }
+
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            if value < 0.0 || value > f64::from(u32::MAX) || value.fract() != 0.0 {
+                return Err(E::custom(
+                    "vector_dimension must exactly represent a Rust u32 integer",
+                ));
+            }
+            Ok(value as u32)
+        }
+    }
+
+    deserializer.deserialize_any(ExactU32Visitor)
 }
 
 impl EmbeddingSpaceManifestInput {

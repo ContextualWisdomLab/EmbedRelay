@@ -29,7 +29,7 @@ Use descriptive two-or-more-word `snake_case` persistent names. UUIDv7 is an opa
 
 ## Persistence
 
-Current PR #1 implements the M1 physical `tenant_space_registry` / `space_registration_audit` boundary with PostgreSQL 18.x UUIDv7 identifiers, forced tenant RLS, append-only update/delete/truncate denial, audit-first transactional registration, deterministic duplicate/concurrent rejection, guarded destructive rollback, and exact-head PostgreSQL 18.6 contract testing.
+Current PR #1 implements the M1 physical `tenant_space_registry` / `space_registration_audit` boundary plus complete immutable v1 `embedding_space_manifest` persistence with PostgreSQL 18.x UUIDv7 identifiers, forced tenant RLS, append-only update/delete/truncate denial, audit-first transactional registration, deterministic duplicate/concurrent rejection, guarded destructive rollback, logical backup/restore acceptance, and exact-head PostgreSQL 18.6 contract testing.
 
 Persistence rules:
 

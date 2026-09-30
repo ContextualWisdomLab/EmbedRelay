@@ -46,6 +46,38 @@ fn strict_manifest_accepts_valid_material_identity() {
 }
 
 #[test]
+fn semantic_integer_dimension_normalizes_decimal_and_exponent_forms() {
+    let canonical = EmbeddingSpaceManifest::from_json(VALID_MANIFEST).expect("valid manifest");
+
+    for numeric_form in ["16.0", "1.6e1"] {
+        let manifest_json = VALID_MANIFEST.replace(
+            "\"vector_dimension\":16",
+            &format!("\"vector_dimension\":{numeric_form}"),
+        );
+        let normalized =
+            EmbeddingSpaceManifest::from_json(&manifest_json).expect("exact semantic integer");
+
+        assert_eq!(normalized.input().vector_dimension(), 16);
+        assert_eq!(normalized.fingerprint(), canonical.fingerprint());
+    }
+}
+
+#[test]
+fn semantic_integer_dimension_rejects_non_number_fraction_negative_and_u32_overflow() {
+    for numeric_form in ["\"16\"", "16.5", "-1", "-1.0", "4294967296", "4294967296.0"] {
+        let manifest_json = VALID_MANIFEST.replace(
+            "\"vector_dimension\":16",
+            &format!("\"vector_dimension\":{numeric_form}"),
+        );
+
+        assert!(matches!(
+            EmbeddingSpaceManifest::from_json(&manifest_json),
+            Err(ManifestValidationError::InvalidJson { .. })
+        ));
+    }
+}
+
+#[test]
 fn strict_manifest_rejects_an_unknown_material_field() {
     let manifest = VALID_MANIFEST.replace("\n}", ",\n  \"unexpected_material_field\":true\n}");
 

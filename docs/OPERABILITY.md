@@ -33,7 +33,7 @@ Only M1 space-registration persistence has executable source today; adapter, rou
 
 ## Current PostgreSQL M1 operating boundary
 
-The active PR contains `migrations/0001_tenant_space_registry.up.sql` and `.down.sql`, `tests/postgres_registry_contract.sh`, and `tests/postgres_backup_restore_contract.sh`. Exact-head CI provisions PostgreSQL 18.6 and is configured to verify both the physical registry boundary and disposable backup/restore acceptance.
+The active PR contains `migrations/0001_tenant_space_registry.up.sql` and `.down.sql`, `migrations/0002_embedding_space_manifest.up.sql` and `.down.sql`, `tests/postgres_registry_contract.sh`, `tests/postgres_manifest_persistence_contract.sh`, and `tests/postgres_backup_restore_contract.sh`. Exact-head CI provisions PostgreSQL 18.6 and is configured to verify the physical registry boundary, canonical-manifest persistence, and disposable backup/restore acceptance.
 
 Current source-level acceptance includes:
 
@@ -42,6 +42,7 @@ Current source-level acceptance includes:
 - require explicit `embedrelay.tenant_id` context;
 - register canonical tenant/fingerprint items transactionally with audit intent inserted first;
 - reject noncanonical fingerprints;
+- require the exact twelve-key v1 manifest, recompute the Rust-compatible fingerprint after semantic-integer normalization, and reject material/fingerprint mismatches;
 - deny cross-tenant insertion and hide another tenant's rows;
 - reject registry/audit `UPDATE`, `DELETE`, and `TRUNCATE` operations;
 - race two identical registration attempts and require exactly one committed registry row plus one audit event;

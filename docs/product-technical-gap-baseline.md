@@ -18,6 +18,7 @@ The bounded commercial promise is that operators can change embedding spaces wit
 | Capability | Product owner / bounded context | Current evidence | Active-PR status | Next verification / action |
 |---|---|---|---|---|
 | Canonical embedding-space identity | Space Identity | `manifest.rs`, manifest tests, PRD-FR-001, ADR-0002 | implemented in Rust; frozen `sha256:<64 lowercase hex>` identity | exact-head Rust CI and independent review |
+| Cross-boundary dimension-number normalization | Space Identity / Space Registry | Rust manifest tests; PostgreSQL manifest contract | repaired test-first; exact positive decimal/exponent integers normalize to the same `u32` fingerprint while invalid values fail closed | exact-head Rust + PostgreSQL 18.6 contract evidence |
 | Full immutable canonical manifest persistence | Space Registry | `migrations/0002_embedding_space_manifest.*.sql`; `tests/postgres_manifest_persistence_contract.sh` | implemented on PR #1; full v1 material stored once per fingerprint and fingerprint recomputed in PostgreSQL | exact-head PostgreSQL 18.6 contract/security/review evidence |
 | Tenant registration + durable audit | Space Registry | migration 0001, Rust registry contract, PostgreSQL registry contract | implemented; registration duplicate-rejecting, audit-first, append-only | exact-head concurrency/RLS verification |
 | Fail-closed vector compatibility | Vector Safety | `vector.rs`, vector tests, PRD-FR-002 | implemented in Rust | exact-head coverage/security evidence |

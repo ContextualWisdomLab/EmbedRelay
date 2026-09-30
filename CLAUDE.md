@@ -15,7 +15,7 @@ Core invariants:
 9. Tenant authority is explicit; UUID timestamps and vector contents carry no authorization semantics.
 10. Current PR #1 includes a narrow active-PR PostgreSQL 18.x persistence slice for `tenant_space_registry` and `space_registration_audit`, with forced tenant RLS, append-only mutation denial, audit-first transactional registration, deterministic duplicate/concurrent rejection, guarded rollback, and PostgreSQL 18.6 contract CI. It is not protected-main or release evidence until the current exact head passes all required checks/reviews.
 11. The physical M1 registration contract is insert-only and duplicate-rejecting, not an implicit UPSERT. A future replay-idempotency API requires a stable request key and explicit tests.
-12. Full canonical-manifest persistence, backup/restore acceptance, adapter training/evaluation, routing, backfill, provider/vector-store ports, service/admin roles, and GPU compute remain incomplete/planned until implemented and verified.
+12. Active PR #1 implements complete immutable v1 canonical-manifest persistence through migration 0002 and disposable logical backup/restore acceptance, but neither is protected-main or release evidence until exact-head verification completes. Adapter training/evaluation, routing, backfill, provider/vector-store ports, bounded production service/admin roles, production-scale recovery, and GPU compute remain incomplete/planned.
 13. Private PostgreSQL objects are not cross-repository integration contracts; ContextualWisdomLab integrations use typed public ports or anti-corruption layers.
 14. Predecessor-head checks, comments, or mergeability never promote a later exact head. Do not self-approve or weaken required governance gates.
 
