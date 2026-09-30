@@ -391,6 +391,17 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
         self.assertIn("<!-- status:present-current -->", erd)
         self.assertIn("not deployable M1 completion", operability)
 
+    def test_api_idempotency_is_proposed_not_current_registry_behavior(self) -> None:
+        """Keep target replay safety distinct from duplicate-rejecting M1 persistence."""
+
+        api_contract = (REPOSITORY_ROOT / "docs" / "API_CONTRACT.md").read_text(encoding="utf-8")
+        test_strategy = (REPOSITORY_ROOT / "docs" / "TEST_STRATEGY.md").read_text(encoding="utf-8")
+        self.assertIn("**Status:** Proposed service contract", api_contract)
+        self.assertIn("Current tenant registration remains duplicate-rejecting", api_contract)
+        self.assertIn("## Proposed service idempotency", api_contract)
+        self.assertIn("- duplicate registration remains rejected rather than replayed;", test_strategy)
+        self.assertIn("## Future service persistence tests", test_strategy)
+
     def test_docs_quality_checks_committed_pr_and_push_ranges(self) -> None:
         """Require whitespace validation to inspect committed changes, not an empty worktree diff."""
 

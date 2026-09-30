@@ -1,7 +1,7 @@
 # EmbedRelay Test and Evaluation Strategy
 
 **Status:** Accepted quality baseline
-**Last reviewed:** 2026-08-09
+**Last reviewed:** 2026-09-30
 
 ## Goal
 
@@ -30,18 +30,25 @@ Verify numerical fidelity, retrieval usefulness, tenant/security boundaries, mig
 - audit rejection leaves state unchanged;
 - audit intent precedes visible state.
 
-## Durable persistence tests
-
-When PostgreSQL work lands:
+## Current M1 durable persistence tests
 
 - migration up/down and rollback;
 - forced RLS/cross-tenant negatives;
 - concurrent same-space registration produces one durable state;
-- tenant-scoped idempotency;
+- duplicate registration remains rejected rather than replayed;
 - append-only audit guarantees;
 - transaction failure cannot make unaudited state visible;
 - immutable canonical space rows after dependent use;
 - backup/restore preserves tenant and audit invariants.
+
+## Future service persistence tests
+
+When the proposed HTTP/RPC service and stable request-key persistence land:
+
+- tenant- and operation-scoped request-key replay returns the original result;
+- reuse of a request key for different semantic input fails closed;
+- expiry and retry behavior cannot bypass audit or tenant boundaries;
+- concurrent identical request keys commit one result and one durable audit outcome.
 
 ## Adapter true-transform recovery
 

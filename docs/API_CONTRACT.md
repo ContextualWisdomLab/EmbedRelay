@@ -1,7 +1,7 @@
 # EmbedRelay API and Port Contract
 
-**Status:** Accepted target contract; current PR #1 exposes Rust domain APIs only.
-**Last reviewed:** 2026-08-09
+**Status:** Proposed service contract; current PR #1 exposes Rust domain APIs and PostgreSQL registry persistence only.
+**Last reviewed:** 2026-09-30
 
 ## Principles
 
@@ -9,7 +9,7 @@
 - Space, adapter, migration, and vector origins are explicit opaque identifiers.
 - Raw vectors from different spaces are never implicitly compared.
 - Translation may abstain; abstention is not an HTTP/SDK transport failure.
-- State-changing requests are idempotent and auditable.
+- Target service state-changing requests are replay-safe and auditable.
 - External provider/vector-store details remain behind adapters.
 
 ## Target control-plane operations
@@ -48,13 +48,13 @@ A successful translation result includes:
 
 ## Error/abstention taxonomy
 
-Transport/domain errors include invalid vector, unknown/inactive space, tenant mismatch, invalid role, adapter unavailable, artifact integrity failure, policy denial, idempotency conflict, and migration-state conflict.
+The proposed service error taxonomy includes invalid vector, unknown/inactive space, tenant mismatch, invalid role, adapter unavailable, artifact integrity failure, policy denial, idempotency conflict, and migration-state conflict.
 
 Normal abstentions include low confidence, OOD, source-only fallback, and native-reencode-required. Clients must not collapse abstention into a zero vector or silent source-space comparison.
 
-## Idempotency
+## Proposed service idempotency
 
-Create/mutate operations use a caller-provided idempotency key scoped to tenant + operation. Replaying the same semantic request returns the existing result; reusing a key for a different request fails closed.
+Target create/mutate operations use a caller-provided idempotency key scoped to tenant + operation. Replaying the same semantic request returns the existing result; reusing a key for a different request fails closed. No current HTTP/RPC service or request-key persistence implements this proposal.
 
 ## Schema/versioning
 
@@ -62,7 +62,7 @@ Public service contracts are versioned independently from adapter artifact schem
 
 ## Current Rust M1 boundary
 
-PR #1 currently provides in-process Rust types/functions for canonical space manifests/fingerprints, vector validation, UUIDv7 identifiers, and tenant registration/audit intent. It does not yet provide HTTP/RPC endpoints. Service APIs must wrap those domain contracts rather than reimplement numerical or tenant invariants.
+PR #1 currently provides in-process Rust types/functions for canonical space manifests/fingerprints, vector validation, UUIDv7 identifiers, and tenant registration/audit intent, plus PostgreSQL registry/manifest persistence contracts. It does not yet provide HTTP/RPC endpoints or request-key persistence. Current tenant registration remains duplicate-rejecting: retrying an already committed tenant/fingerprint registration receives the unique-key outcome rather than a replayed result. Service APIs must wrap those domain contracts rather than reimplement numerical or tenant invariants.
 
 ## Provider/vector-store port requirements
 
