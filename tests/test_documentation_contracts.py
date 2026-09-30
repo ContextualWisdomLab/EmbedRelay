@@ -401,12 +401,14 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
         self.assertIn("tests/test_schema_guardrails.py", workflow)
         self.assertNotIn("run: git diff --check\n", workflow)
 
-    def test_docs_quality_only_cancels_superseded_ready_pr_runs(self) -> None:
+    def test_docs_quality_runs_on_stacked_draft_prs(self) -> None:
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+        pull_request_block = workflow.split("  pull_request:\n", 1)[1].split("  push:\n", 1)[0]
         self.assertIn("ready_for_review, converted_to_draft, closed", workflow)
         self.assertIn("${{ github.workflow }}-${{ github.repository }}-", workflow)
         self.assertIn("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", workflow)
-        self.assertIn("github.event.pull_request.draft == false", workflow)
+        self.assertNotIn("branches:", pull_request_block)
+        self.assertNotIn("github.event.pull_request.draft == false", workflow)
         self.assertIn("github.event.action != 'closed'", workflow)
 
 if __name__ == "__main__":
