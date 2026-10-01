@@ -24,6 +24,7 @@ All notable changes to EmbedRelay are recorded here. The project has not publish
 - Registration persistence is explicitly duplicate-rejecting rather than an implicit UPSERT. A future idempotent replay API must introduce a stable request key and a separate tested contract instead of heuristic conflict handling.
 - API and test-strategy documentation now marks replay-safe request idempotency as a Proposed service contract, not current M1 registry behavior, and separately records the implemented duplicate-rejection acceptance tests.
 - Rust and PostgreSQL now share one semantic-integer `vector_dimension` contract: exact decimal and exponent forms normalize to the same `u32` identity and fingerprint, while fractions, zero, negative values, and overflow fail closed.
+- The exact-production-coverage gate now accepts only positive, non-vacuous JSON integer totals and bounded integer covered counts. Zero, negative, boolean, fractional, and over-covered summaries fail closed instead of being coerced into apparent 100% coverage.
 
 ### Security
 

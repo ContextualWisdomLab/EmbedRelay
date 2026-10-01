@@ -1,7 +1,7 @@
 # EmbedRelay Requirements, Decisions, and Evidence Traceability
 
 **Status:** Accepted active-PR baseline
-**Last reviewed:** 2026-09-02
+**Last reviewed:** 2026-10-01
 
 <!-- status:active-pr-implemented -->
 <!-- status:planned -->
@@ -22,6 +22,7 @@ The stable status markers above are machine-readable maturity anchors. Executabl
 | append-only canonical registry state | Security/Operability | append-only triggers on registry/audit/manifest + guarded down migrations | active PR implemented; exact-head lifecycle verification required |
 | logical backup/restore acceptance | release/operability boundary | `tests/postgres_backup_restore_contract.sh` | active PR candidate; restores exact tenant registrations, audit IDs, canonical manifest material and controls; not production RTO/RPO/PITR |
 | locked Rust dependency resolution | quality/release boundary; ADR-0010 | tracked `Cargo.lock`; locked stable tests/LLVM coverage | active PR implemented; exact-head CI required |
+| non-vacuous exact production coverage | quality/release boundary; ADR-0010 | `.github/workflows/ci.yml`; `tests/test_ci_coverage_gate.py` executes the deployed gate against malformed and complete summaries | active PR implemented; exact-head CI required |
 | directional role-specific adapters | PRD-FR-003; ADR-0003 | PRD/TRD/Architecture | planned |
 | tiered algorithm portfolio | ADR-0004 | TRD/Test Strategy | planned |
 | retrieval-level fidelity evaluation | PRD-FR-004; ADR-0010 | Test Strategy | planned |

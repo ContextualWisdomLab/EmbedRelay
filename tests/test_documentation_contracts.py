@@ -410,6 +410,7 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
         self.assertIn("github.event.pull_request.base.sha", workflow)
         self.assertIn("github.event.before", workflow)
         self.assertIn("tests/test_schema_guardrails.py", workflow)
+        self.assertIn("tests/test_ci_coverage_gate.py", workflow)
         self.assertNotIn("run: git diff --check\n", workflow)
 
     def test_docs_quality_runs_on_stacked_draft_prs(self) -> None:

@@ -1,5 +1,6 @@
 /target/
 /.coverage/
+/coverage-summary.json
 *.profraw
 *.profdata
 .DS_Store

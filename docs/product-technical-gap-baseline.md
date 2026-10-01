@@ -2,7 +2,7 @@
 
 **Status:** active-PR commercialization baseline
 **Scope:** ContextualWisdomLab/EmbedRelay, with causal shared-control-plane blockers linked explicitly
-**Last reconciled:** 2026-09-30
+**Last reconciled:** 2026-10-01
 **Release state:** pre-release; PR #1 remains Draft.
 
 Transient CI/review states are resolved live from GitHub rather than committed as durable truth. Every head change invalidates predecessor-head merge evidence.
@@ -120,6 +120,7 @@ EmbedRelay remains standalone. Optional ContextualWisdomLab consumers/providers 
 | P0 | Canonical manifest persistence verification | Space Registry | migration 0002 + manifest contract + frozen Rust fingerprint | prove exact schema/material/fingerprint/RLS/immutability/migration lifecycle on PostgreSQL 18.6 | implementation present on current writer branch; fresh exact-head CI required |
 | P0 | Durable registry + recovery verification | Space Registry / Operability | migrations 0001/0002 + registry/manifest/restore contracts | run RLS/concurrency/rollback/restore acceptance together | successor head requires fresh CI; queued/pending is non-passing |
 | P0 | Documentation truth reconciliation | Product Architecture | PRD/TRD/Architecture/ERD/API/Test/Traceability/baseline | keep active vs planned boundary synchronized | API idempotency demoted from premature Accepted/current wording to Proposed service semantics; fresh exact-head review required |
+| P0 | Non-vacuous exact coverage evidence | Release Governance | executable workflow regression proves the prior gate accepted zero, negative, boolean, and fractional summaries | require positive JSON integer totals and bounded integer covered counts for line/region/function/branch metrics | repaired test-first on the canonical writer branch; fresh exact-head CI required |
 | P0 | Central dependency-review availability | ContextualWisdomLab/.github | shared control-plane concern tracked upstream | repair causal owner if exact-head gate fails there; never bypass | consumer revalidates after upstream fix |
 | P0 | Independent approval | Release Governance | organization policy requires qualifying non-author approval | obtain independent review after exact-head checks | cannot self-approve/admin-bypass |
 | P1 | Replay-safe API idempotency, if buyer workflow needs it | Space Registry/API | tenant registration deliberately duplicate-rejects | define request-key/replay/mismatch/expiry/audit semantics test-first | next registry product gap |

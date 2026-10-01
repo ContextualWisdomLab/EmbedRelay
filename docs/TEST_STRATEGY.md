@@ -1,7 +1,7 @@
 # EmbedRelay Test and Evaluation Strategy
 
 **Status:** Accepted quality baseline
-**Last reviewed:** 2026-09-30
+**Last reviewed:** 2026-10-01
 
 ## Goal
 
@@ -10,7 +10,7 @@ Verify numerical fidelity, retrieval usefulness, tenant/security boundaries, mig
 ## Repository gates
 
 - Rust workspace tests;
-- exact LLVM line, region, function, and branch coverage at 100% for production code;
+- exact LLVM line, region, function, and branch coverage at 100% for production code, with a positive integer denominator for every metric and no coercion of boolean or fractional summaries;
 - `missing_docs = deny` and strict lint policy;
 - exact-current-head CI/security/review evidence;
 - migration/schema/operator documentation contract tests;

@@ -86,8 +86,17 @@ jobs:
               if summary is None:
                   failures.append(f"{metric}: metric absent from LLVM coverage output")
                   continue
-              count = int(summary["count"])
-              covered = int(summary["covered"])
+              count = summary.get("count")
+              covered = summary.get("covered")
+              if type(count) is not int or type(covered) is not int:
+                  failures.append(f"{metric}: count and covered must be JSON integers")
+                  continue
+              if count <= 0:
+                  failures.append(f"{metric}: total count must be positive, got {count}")
+                  continue
+              if covered < 0 or covered > count:
+                  failures.append(f"{metric}: invalid covered count {covered}/{count}")
+                  continue
               if covered != count:
                   failures.append(f"{metric}: {covered}/{count} covered")
               print(f"{metric}: {covered}/{count}")
