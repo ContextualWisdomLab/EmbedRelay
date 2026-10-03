@@ -2,10 +2,16 @@
 
 **Status:** active-PR commercialization baseline
 **Scope:** ContextualWisdomLab/EmbedRelay, with causal shared-control-plane blockers linked explicitly
-**Last reconciled:** 2026-10-01
+**Last reconciled:** 2026-10-03
 **Release state:** pre-release; PR #1 remains Draft.
 
 Transient CI/review states are resolved live from GitHub rather than committed as durable truth. Every head change invalidates predecessor-head merge evidence.
+
+The current integration order is `PR #4 -> PR #5 -> PR #1`. PR #4 is the
+documentation/contract foundation admitted to Ready review; PR #5 and PR #1
+remain Draft until their direct parent integrates. **Ready review admission is not merge authority.** Every changed head must obtain its own terminal required
+checks, zero valid unresolved findings, and qualifying independent approval
+before ordinary merge.
 
 ## Commercial product responsibility
 
