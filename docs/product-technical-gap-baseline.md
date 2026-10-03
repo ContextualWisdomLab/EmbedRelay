@@ -7,11 +7,11 @@
 
 Transient CI/review states are resolved live from GitHub rather than committed as durable truth. Every head change invalidates predecessor-head merge evidence.
 
-The current integration order is `PR #4 -> PR #5 -> PR #1`. PR #4 is the
-documentation/contract foundation admitted to Ready review; PR #5 and PR #1
-remain Draft until their direct parent integrates. **Ready review admission is not merge authority.** Every changed head must obtain its own terminal required
-checks, zero valid unresolved findings, and qualifying independent approval
-before ordinary merge.
+The current integration order is `PR #4 -> PR #5 -> PR #1`. All three remain
+Draft because effective default-branch governance and independent-review
+capacity are not yet proven. **Draft is required until effective default-branch governance and independent-review capacity are proven.** Every changed head
+must then obtain its own terminal required checks, zero valid unresolved
+findings, and qualifying independent approval before ordinary merge.
 
 ## Commercial product responsibility
 

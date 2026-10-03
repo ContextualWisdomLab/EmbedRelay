@@ -402,13 +402,16 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
         self.assertIn("- duplicate registration remains rejected rather than replayed;", test_strategy)
         self.assertIn("## Future service persistence tests", test_strategy)
 
-    def test_gap_baseline_separates_review_admission_from_merge_authority(self) -> None:
-        """Keep Ready review admission from being mistaken for merge or release authority."""
+    def test_gap_baseline_keeps_unready_stack_draft(self) -> None:
+        """Keep an ungoverned or unreviewed stack from being promoted prematurely."""
 
         baseline = (REPOSITORY_ROOT / "docs" / "product-technical-gap-baseline.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("Ready review admission is not merge authority", baseline)
+        self.assertIn(
+            "Draft is required until effective default-branch governance and independent-review capacity are proven",
+            baseline,
+        )
         self.assertIn("PR #4 -> PR #5 -> PR #1", baseline)
         self.assertIn("qualifying independent approval", baseline)
 
