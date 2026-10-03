@@ -1,6 +1,6 @@
-# ADR-0003: Model adapters as directional, role-specific artifacts
+# ADR-0006: Model adapters as directional, role-specific artifacts
 
-**Status:** Accepted
+**Status:** Proposed
 **Date:** 2026-08-09
 
 ## Context

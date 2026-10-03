@@ -43,7 +43,7 @@ Persistence rules:
 
 ## Documentation
 
-Material changes reconcile PRD, TRD, Architecture, UML, ERD, API, ADRs, Security, Threat Model, Test Strategy, Operability, Traceability, `docs/product-technical-gap-baseline.md`, README, and CHANGELOG as applicable. Accepted target architecture is not the same as implementation maturity. Research-backed database/algorithm decisions belong in `docs/doctoring/` with primary sources and APA 7 references.
+Material changes reconcile PRD, TRD, Architecture, UML, ERD, API, ADRs, Security, Threat Model, Test Strategy, Operability, Traceability, `docs/product-technical-gap-baseline.md`, README, and CHANGELOG as applicable. Proposed target architecture is not the same as implementation maturity. Research-backed database/algorithm decisions belong in `docs/doctoring/` with primary sources and APA 7 references.
 
 ## Ecosystem
 

@@ -23,7 +23,7 @@ The bounded commercial promise is that operators can change embedding spaces wit
 
 | Capability | Product owner / bounded context | Current evidence | Active-PR status | Next verification / action |
 |---|---|---|---|---|
-| Canonical embedding-space identity | Space Identity | `manifest.rs`, manifest tests, PRD-FR-001, ADR-0002 | implemented in Rust; frozen `sha256:<64 lowercase hex>` identity | exact-head Rust CI and independent review |
+| Canonical embedding-space identity | Space Identity | `manifest.rs`, manifest tests, PRD-FR-001, ADR-0005 | implemented in Rust; frozen `sha256:<64 lowercase hex>` identity | exact-head Rust CI and independent review |
 | Cross-boundary dimension-number normalization | Space Identity / Space Registry | Rust manifest tests; PostgreSQL manifest contract | repaired test-first; exact positive decimal/exponent integers normalize to the same `u32` fingerprint while invalid values fail closed | exact-head Rust + PostgreSQL 18.6 contract evidence |
 | Full immutable canonical manifest persistence | Space Registry | `migrations/0002_embedding_space_manifest.*.sql`; `tests/postgres_manifest_persistence_contract.sh` | implemented on PR #1; full v1 material stored once per fingerprint and fingerprint recomputed in PostgreSQL | exact-head PostgreSQL 18.6 contract/security/review evidence |
 | Tenant registration + durable audit | Space Registry | migration 0001, Rust registry contract, PostgreSQL registry contract | implemented; registration duplicate-rejecting, audit-first, append-only | exact-head concurrency/RLS verification |
@@ -32,11 +32,11 @@ The bounded commercial promise is that operators can change embedding spaces wit
 | Forced tenant isolation | Space Registry | RLS on registry/audit plus manifest visibility derived from registration | implemented on active PR | prove same-tenant visibility and outsider denial under non-bypass role |
 | Canonical identity recovery | Operability | `tests/postgres_backup_restore_contract.sh` | logical restore now reconciles 2 registry + 2 audit + 2 canonical manifest rows and controls | exact-head CI; do not infer production RTO/RPO/PITR |
 | Adapter registry/fitting | Adapter Fidelity | PRD/TRD/ADRs | planned | research-grounded Rust fitting/evaluation boundary |
-| Retrieval-level fidelity/calibration | Adapter Fidelity | PRD-FR-004, Test Strategy, ADR-0010 | planned | held-out retrieval protocol and evidence |
-| Confidence/abstention | Translation Policy | PRD-FR-010, ADR-0007 | planned | executable policy and OOD/calibration tests |
-| Buyer-operable migration workflow | Migration Orchestration | ADR-0005, Operability | planned | executable state machine/ports + realistic rollback |
-| Provider/vector-store interoperability | Integration Ports | ADR-0008 | planned | first typed real adapter; no private-database coupling |
-| Release/SBOM/provenance | Release Governance | ADR-0010 + organization workflows | partial | protected-head receipts and first public release |
+| Retrieval-level fidelity/calibration | Adapter Fidelity | PRD-FR-004, Test Strategy, ADR-0013 | planned | held-out retrieval protocol and evidence |
+| Confidence/abstention | Translation Policy | PRD-FR-010, ADR-0010 | planned | executable policy and OOD/calibration tests |
+| Buyer-operable migration workflow | Migration Orchestration | ADR-0008, Operability | planned | executable state machine/ports + realistic rollback |
+| Provider/vector-store interoperability | Integration Ports | ADR-0011 | planned | first typed real adapter; no private-database coupling |
+| Release/SBOM/provenance | Release Governance | ADR-0013 + organization workflows | partial | protected-head receipts and first public release |
 
 ## DDD model
 
@@ -126,6 +126,7 @@ EmbedRelay remains standalone. Optional ContextualWisdomLab consumers/providers 
 | P0 | Canonical manifest persistence verification | Space Registry | migration 0002 + manifest contract + frozen Rust fingerprint | prove exact schema/material/fingerprint/RLS/immutability/migration lifecycle on PostgreSQL 18.6 | implementation present on current writer branch; fresh exact-head CI required |
 | P0 | Durable registry + recovery verification | Space Registry / Operability | migrations 0001/0002 + registry/manifest/restore contracts | run RLS/concurrency/rollback/restore acceptance together | successor head requires fresh CI; queued/pending is non-passing |
 | P0 | Documentation truth reconciliation | Product Architecture | PRD/TRD/Architecture/ERD/API/Test/Traceability/baseline | keep active vs planned boundary synchronized | API idempotency demoted from premature Accepted/current wording to Proposed service semantics; fresh exact-head review required |
+| P0 | ADR identity and lifecycle integrity | Product Architecture | `docs/adr/README.md`; unique-number regression contract | keep one stable decision identity and Proposed status across the unmerged stack | repaired to collision-free ADR-0001…0013; fresh exact-head review required |
 | P0 | Non-vacuous exact coverage evidence | Release Governance | executable workflow regression proves the prior gate accepted zero, negative, boolean, and fractional summaries | require positive JSON integer totals and bounded integer covered counts for line/region/function/branch metrics | repaired test-first on the canonical writer branch; fresh exact-head CI required |
 | P0 | Central dependency-review availability | ContextualWisdomLab/.github | shared control-plane concern tracked upstream | repair causal owner if exact-head gate fails there; never bypass | consumer revalidates after upstream fix |
 | P0 | Independent approval | Release Governance | organization policy requires qualifying non-author approval | obtain independent review after exact-head checks | cannot self-approve/admin-bypass |

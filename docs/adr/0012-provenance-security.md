@@ -1,6 +1,6 @@
-# ADR-0009: Preserve vector and adapter provenance
+# ADR-0012: Preserve vector and adapter provenance
 
-**Status:** Accepted
+**Status:** Proposed
 **Date:** 2026-08-09
 
 ## Context

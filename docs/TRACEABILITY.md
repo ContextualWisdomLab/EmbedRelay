@@ -1,6 +1,6 @@
 # EmbedRelay Requirements, Decisions, and Evidence Traceability
 
-**Status:** Accepted active-PR baseline
+**Status:** Proposed active-PR baseline
 **Last reviewed:** 2026-10-01
 
 <!-- status:active-pr-implemented -->
@@ -10,29 +10,29 @@ The stable status markers above are machine-readable maturity anchors. Executabl
 
 | Product/architecture requirement | Decision/doc | Current source/evidence | Maturity |
 |---|---|---|---|
-| immutable complete space identity | PRD-FR-001; ADR-0002 | Rust `manifest` contract + tests; canonical identity `sha256:<64 lowercase hex>` | active PR implemented |
+| immutable complete space identity | PRD-FR-001; ADR-0005 | Rust `manifest` contract + tests; canonical identity `sha256:<64 lowercase hex>` | active PR implemented |
 | exact canonical fingerprint persistence | PRD-FR-001; PostgreSQL doctoring | migration 0001 + registry/recovery contracts; earlier representation repair lineage | active PR implemented; exact-head PostgreSQL CI required |
 | full immutable v1 canonical manifest persistence | PRD-FR-001; TRD §3/§10; ERD | `migrations/0002_embedding_space_manifest.*.sql`; `tests/postgres_manifest_persistence_contract.sh`; CI manifest step | active PR implemented; exact-head PostgreSQL 18.6 verification required |
-| Rust/PostgreSQL manifest↔fingerprint equivalence | ADR-0002; PostgreSQL doctoring | frozen Rust fingerprint fixture; DB recomputation using the same domain separator, field order, UTF-8 byte-length framing, SHA-256 | active PR implemented; exact-head golden fixture verification required |
-| fail-closed vector/space compatibility | PRD-FR-002; ADR-0002 | Rust `vector` contract + tests | active PR implemented |
+| Rust/PostgreSQL manifest↔fingerprint equivalence | ADR-0005; PostgreSQL doctoring | frozen Rust fingerprint fixture; DB recomputation using the same domain separator, field order, UTF-8 byte-length framing, SHA-256 | active PR implemented; exact-head golden fixture verification required |
+| fail-closed vector/space compatibility | PRD-FR-002; ADR-0005 | Rust `vector` contract + tests | active PR implemented |
 | opaque UUIDv7 durable identifiers | PRD-FR-008 boundary | Rust `identifier` contract + RFC test vector | active PR implemented |
-| tenant-isolated audit-before-mutation registration | PRD-FR-008; ADR-0009 | Rust registry contract + tenant/audit tests | active PR implemented |
-| PostgreSQL tenant RLS/audit | PRD-FR-008; ADR-0009 | migration 0001 + registry contract | active PR implemented; exact-head CI required |
+| tenant-isolated audit-before-mutation registration | PRD-FR-008; ADR-0012 | Rust registry contract + tenant/audit tests | active PR implemented |
+| PostgreSQL tenant RLS/audit | PRD-FR-008; ADR-0012 | migration 0001 + registry contract | active PR implemented; exact-head CI required |
 | canonical manifest tenant visibility | PRD-FR-008; Security/ERD | forced RLS on `embedding_space_manifest`; visibility derived through current tenant registration; outsider-denial contract | active PR implemented; exact-head CI required |
 | append-only canonical registry state | Security/Operability | append-only triggers on registry/audit/manifest + guarded down migrations | active PR implemented; exact-head lifecycle verification required |
 | logical backup/restore acceptance | release/operability boundary | `tests/postgres_backup_restore_contract.sh` | active PR candidate; restores exact tenant registrations, audit IDs, canonical manifest material and controls; not production RTO/RPO/PITR |
-| locked Rust dependency resolution | quality/release boundary; ADR-0010 | tracked `Cargo.lock`; locked stable tests/LLVM coverage | active PR implemented; exact-head CI required |
-| non-vacuous exact production coverage | quality/release boundary; ADR-0010 | `.github/workflows/ci.yml`; `tests/test_ci_coverage_gate.py` executes the deployed gate against malformed and complete summaries | active PR implemented; exact-head CI required |
-| directional role-specific adapters | PRD-FR-003; ADR-0003 | PRD/TRD/Architecture | planned |
-| tiered algorithm portfolio | ADR-0004 | TRD/Test Strategy | planned |
-| retrieval-level fidelity evaluation | PRD-FR-004; ADR-0010 | Test Strategy | planned |
-| confidence gate/abstention | PRD-FR-010; ADR-0007 | API/TRD/Test Strategy | planned |
-| dual-index migration | PRD-FR-006; ADR-0005 | Architecture/UML/Operability | planned |
-| target-native backfill | PRD-FR-007; ADR-0001/0005 | Architecture/Operability | planned |
-| provider/vector-store neutrality | ADR-0008 | Architecture/API | planned |
-| Rust CPU reference/GPU parity | ADR-0006 | TRD/Test Strategy | CPU domain contract only; computational GPU path planned |
-| sensitive asset/provenance boundary | ADR-0009 | Security/Threat/ERD | partial; M1 registry/manifest/audit persistence active-PR implemented, broader governance planned |
-| one-hop/release evidence | ADR-0010 | PRD/Test/Operability | accepted target |
+| locked Rust dependency resolution | quality/release boundary; ADR-0013 | tracked `Cargo.lock`; locked stable tests/LLVM coverage | active PR implemented; exact-head CI required |
+| non-vacuous exact production coverage | quality/release boundary; ADR-0013 | `.github/workflows/ci.yml`; `tests/test_ci_coverage_gate.py` executes the deployed gate against malformed and complete summaries | active PR implemented; exact-head CI required |
+| directional role-specific adapters | PRD-FR-003; ADR-0006 | PRD/TRD/Architecture | planned |
+| tiered algorithm portfolio | ADR-0007 | TRD/Test Strategy | planned |
+| retrieval-level fidelity evaluation | PRD-FR-004; ADR-0013 | Test Strategy | planned |
+| confidence gate/abstention | PRD-FR-010; ADR-0010 | API/TRD/Test Strategy | planned |
+| dual-index migration | PRD-FR-006; ADR-0008 | Architecture/UML/Operability | planned |
+| target-native backfill | PRD-FR-007; ADR-0004/0008 | Architecture/Operability | planned |
+| provider/vector-store neutrality | ADR-0011 | Architecture/API | planned |
+| Rust CPU reference/GPU parity | ADR-0009 | TRD/Test Strategy | CPU domain contract only; computational GPU path planned |
+| sensitive asset/provenance boundary | ADR-0012 | Security/Threat/ERD | partial; M1 registry/manifest/audit persistence active-PR implemented, broader governance planned |
+| one-hop/release evidence | ADR-0013 | PRD/Test/Operability | proposed target |
 
 ## Current M1 persistence evidence
 
@@ -57,7 +57,7 @@ The database-side equivalence check uses PostgreSQL 18 core `sha256(bytea)` and 
 - **active PR implemented:** executable source and tests exist on PR #1 but are not protected-main/released behavior; exact-head verification may still be pending after a new commit.
 - **partial:** a bounded subset exists while a materially broader product/service, recovery, or governance contract remains incomplete.
 - **planned:** accepted product/architecture target with no executable implementation evidence yet.
-- **accepted target:** policy/design gate that applies to future implementation and release.
+- **proposed target:** policy/design gate under review for future implementation and release.
 
 ## Evidence promotion rule
 

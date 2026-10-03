@@ -4,16 +4,16 @@
 use std::{fs, path::PathBuf, process::Command};
 
 const GOVERNING_ADRS: [&str; 10] = [
-    "0001-product-boundary.md",
-    "0002-space-fingerprint.md",
-    "0003-directed-adapters.md",
-    "0004-algorithm-portfolio.md",
-    "0005-dual-index-native-backfill.md",
-    "0006-rust-compute-plane.md",
-    "0007-confidence-abstention.md",
-    "0008-provider-neutral-ports.md",
-    "0009-provenance-security.md",
-    "0010-release-gates.md",
+    "0004-product-boundary.md",
+    "0005-space-fingerprint.md",
+    "0006-directed-adapters.md",
+    "0007-algorithm-portfolio.md",
+    "0008-dual-index-native-backfill.md",
+    "0009-rust-compute-plane.md",
+    "0010-confidence-abstention.md",
+    "0011-provider-neutral-ports.md",
+    "0012-provenance-security.md",
+    "0013-release-gates.md",
 ];
 
 fn workspace_root() -> PathBuf {

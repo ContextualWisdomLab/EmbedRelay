@@ -1,6 +1,6 @@
 # EmbedRelay Operability and Migration Runbook
 
-**Status:** Accepted target operating baseline; PR #1 has a narrow executable PostgreSQL M1 slice but is not deployable M1 completion.
+**Status:** Proposed target operating baseline; PR #1 has a narrow executable PostgreSQL M1 slice but is not deployable M1 completion.
 **Last reviewed:** 2026-09-02
 
 ## Operating principles

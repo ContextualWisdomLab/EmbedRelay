@@ -1,6 +1,6 @@
-# ADR-0008: Keep providers and vector stores behind neutral ports
+# ADR-0011: Keep providers and vector stores behind neutral ports
 
-**Status:** Accepted
+**Status:** Proposed
 **Date:** 2026-08-09
 
 ## Context

@@ -1,6 +1,6 @@
-# ADR-0001: Treat translation as a migration bridge
+# ADR-0004: Treat translation as a migration bridge
 
-**Status:** Accepted
+**Status:** Proposed
 **Date:** 2026-08-09
 
 ## Context

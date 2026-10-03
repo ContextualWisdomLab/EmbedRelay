@@ -96,7 +96,7 @@ Start with the [documentation map](DOCUMENTATION.md):
 - [Product and technical gap baseline](docs/product-technical-gap-baseline.md)
 - [Architecture decision records](docs/adr/README.md)
 
-Documentation uses explicit maturity labels such as `active-PR implemented`, `protected-main implemented`, `planned`, `partial`, and `accepted target` so target architecture is not confused with current product evidence.
+Documentation uses explicit maturity labels such as `active-PR implemented`, `protected-main implemented`, `planned`, `partial`, and `proposed target` so target architecture is not confused with current product evidence.
 
 ## Contributing and verification
 

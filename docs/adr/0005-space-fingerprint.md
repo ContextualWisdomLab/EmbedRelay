@@ -1,6 +1,6 @@
-# ADR-0002: Use immutable canonical embedding-space fingerprints
+# ADR-0005: Use immutable canonical embedding-space fingerprints
 
-**Status:** Accepted
+**Status:** Proposed
 **Date:** 2026-08-09
 
 ## Context

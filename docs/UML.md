@@ -1,6 +1,6 @@
 # EmbedRelay UML and Runtime Views
 
-**Status:** Accepted target views; current M1 as-built behavior is marked separately.
+**Status:** Proposed target views; current M1 as-built behavior is marked separately.
 **Last reviewed:** 2026-08-15
 
 ## Current M1 registration sequence

@@ -412,6 +412,25 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
         self.assertIn("PR #4 -> PR #5 -> PR #1", baseline)
         self.assertIn("qualifying independent approval", baseline)
 
+    def test_adr_numbers_are_unique_and_indexed(self) -> None:
+        """Keep every architectural decision on one stable, discoverable identity."""
+
+        adr_directory = REPOSITORY_ROOT / "docs" / "adr"
+        adr_paths = sorted(adr_directory.glob("[0-9][0-9][0-9][0-9]-*.md"))
+        index = (adr_directory / "README.md").read_text(encoding="utf-8")
+        numbers: list[str] = []
+
+        for adr_path in adr_paths:
+            number = adr_path.name[:4]
+            numbers.append(number)
+            content = adr_path.read_text(encoding="utf-8")
+            heading = content.splitlines()[0]
+            self.assertRegex(heading, rf"^# ADR[- ]{number}:", adr_path.name)
+            self.assertRegex(content, r"(?m)^\*{0,2}Status:\*{0,2} Proposed$", adr_path.name)
+            self.assertIn(f"({adr_path.name})", index, adr_path.name)
+
+        self.assertEqual(len(numbers), len(set(numbers)), f"duplicate ADR numbers: {numbers}")
+
     def test_docs_quality_checks_committed_pr_and_push_ranges(self) -> None:
         """Require whitespace validation to inspect committed changes, not an empty worktree diff."""
 

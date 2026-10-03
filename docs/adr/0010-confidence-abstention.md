@@ -1,6 +1,6 @@
-# ADR-0007: Make abstention a first-class production outcome
+# ADR-0010: Make abstention a first-class production outcome
 
-**Status:** Accepted
+**Status:** Proposed
 **Date:** 2026-08-09
 
 ## Context

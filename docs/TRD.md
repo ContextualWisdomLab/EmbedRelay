@@ -1,6 +1,6 @@
 # EmbedRelay Technical Requirements Document
 
-**Status:** Accepted target architecture with explicit active-PR M1 markers.
+**Status:** Proposed target architecture with explicit active-PR M1 markers.
 **Last reviewed:** 2026-09-02
 
 ## 1. Technical objective

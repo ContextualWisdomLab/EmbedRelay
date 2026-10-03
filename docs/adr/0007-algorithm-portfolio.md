@@ -1,6 +1,6 @@
-# ADR-0004: Use a tiered adapter algorithm portfolio
+# ADR-0007: Use a tiered adapter algorithm portfolio
 
-**Status:** Accepted
+**Status:** Proposed
 **Date:** 2026-08-09
 
 ## Context

@@ -26,8 +26,8 @@
 
 - **active-PR implemented:** executable source exists on PR #1 but is not protected-main/released functionality.
 - **protected-main implemented:** executable source has passed protected integration but is not automatically a released product claim.
-- **planned:** accepted target architecture without executable implementation yet.
-- **accepted target:** governing product/architecture decision.
+- **planned:** proposed target architecture without executable implementation yet.
+- **proposed target:** product/architecture decision under review on the current PR stack.
 - **partial:** some authoritative contract exists while an acceptance-critical implementation/evidence boundary is absent.
 - **conceptual:** logical entity or service boundary, not a claim of durable persistence/deployment.
 

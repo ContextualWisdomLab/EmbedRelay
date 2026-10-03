@@ -1,6 +1,6 @@
-# ADR-0006: Keep production transformation arithmetic in Rust
+# ADR-0009: Keep production transformation arithmetic in Rust
 
-**Status:** Accepted
+**Status:** Proposed
 **Date:** 2026-08-09
 
 ## Context
