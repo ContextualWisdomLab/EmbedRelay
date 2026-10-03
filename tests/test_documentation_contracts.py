@@ -386,10 +386,21 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
         erd = (REPOSITORY_ROOT / "docs" / "ERD.md").read_text(encoding="utf-8")
         operability = (REPOSITORY_ROOT / "docs" / "OPERABILITY.md").read_text(encoding="utf-8")
         self.assertIn("pre-release", prd.lower())
-        self.assertIn("not as-built runtime evidence", trd)
-        self.assertIn("not as-built runtime evidence", uml)
-        self.assertIn("no current database is claimed", erd.lower())
-        self.assertIn("does not ship a network service", operability)
+        self.assertIn("active-PR implemented", trd)
+        self.assertIn("<!-- status:planned -->", uml)
+        self.assertIn("<!-- status:present-current -->", erd)
+        self.assertIn("not deployable M1 completion", operability)
+
+    def test_api_idempotency_is_proposed_not_current_registry_behavior(self) -> None:
+        """Keep target replay safety distinct from duplicate-rejecting M1 persistence."""
+
+        api_contract = (REPOSITORY_ROOT / "docs" / "API_CONTRACT.md").read_text(encoding="utf-8")
+        test_strategy = (REPOSITORY_ROOT / "docs" / "TEST_STRATEGY.md").read_text(encoding="utf-8")
+        self.assertIn("**Status:** Proposed service contract", api_contract)
+        self.assertIn("Current tenant registration remains duplicate-rejecting", api_contract)
+        self.assertIn("## Proposed service idempotency", api_contract)
+        self.assertIn("- duplicate registration remains rejected rather than replayed;", test_strategy)
+        self.assertIn("## Future service persistence tests", test_strategy)
 
     def test_gap_baseline_keeps_unready_stack_draft(self) -> None:
         """Keep an ungoverned or unreviewed stack from being promoted prematurely."""
@@ -404,6 +415,25 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
         self.assertIn("PR #4 -> PR #5 -> PR #1", baseline)
         self.assertIn("qualifying independent approval", baseline)
 
+    def test_adr_numbers_are_unique_and_indexed(self) -> None:
+        """Keep every architectural decision on one stable, discoverable identity."""
+
+        adr_directory = REPOSITORY_ROOT / "docs" / "adr"
+        adr_paths = sorted(adr_directory.glob("[0-9][0-9][0-9][0-9]-*.md"))
+        index = (adr_directory / "README.md").read_text(encoding="utf-8")
+        numbers: list[str] = []
+
+        for adr_path in adr_paths:
+            number = adr_path.name[:4]
+            numbers.append(number)
+            content = adr_path.read_text(encoding="utf-8")
+            heading = content.splitlines()[0]
+            self.assertRegex(heading, rf"^# ADR[- ]{number}:", adr_path.name)
+            self.assertRegex(content, r"(?m)^\*{0,2}Status:\*{0,2} Proposed$", adr_path.name)
+            self.assertIn(f"({adr_path.name})", index, adr_path.name)
+
+        self.assertEqual(len(numbers), len(set(numbers)), f"duplicate ADR numbers: {numbers}")
+
     def test_docs_quality_checks_committed_pr_and_push_ranges(self) -> None:
         """Require whitespace validation to inspect committed changes, not an empty worktree diff."""
 
@@ -412,6 +442,7 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
         self.assertIn("github.event.pull_request.base.sha", workflow)
         self.assertIn("github.event.before", workflow)
         self.assertIn("tests/test_schema_guardrails.py", workflow)
+        self.assertIn("tests/test_ci_coverage_gate.py", workflow)
         self.assertNotIn("run: git diff --check\n", workflow)
 
     def test_docs_quality_runs_on_stacked_draft_prs(self) -> None:

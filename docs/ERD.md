@@ -1,127 +1,159 @@
-# EmbedRelay conceptual ERD
+# EmbedRelay Data Model and ERD
 
-Status: future relational persistence target; **no current database is claimed**
-Last reconciled: 2026-09-02
+**Status:** Proposed target model with an executable M1 physical persistence slice on active PR #1.
+**Last reviewed:** 2026-09-02
 
-This model exists to constrain naming, tenant isolation, normalization and evidence ownership before persistence implementation. Every object name contains at least two semantic words and uses `snake_case`. The target remains third normal form; vector-store payload/index persistence stays outside this relational authority.
+EmbedRelay separates the current Rust domain contract, the current PostgreSQL M1 registry/manifest/audit slice, and the broader planned control-plane model. Persistent object names use descriptive two-or-more-word `snake_case` names.
+
+## Current Rust domain model
+
+```mermaid
+classDiagram
+    class RelayIdentifier {
+      +UUIDv7 value
+    }
+    class EmbeddingSpaceManifest {
+      +model/revision
+      +input_role
+      +preprocessing
+      +normalization
+      +dimension
+      +precision
+      +metric
+      +canonical_fingerprint()
+    }
+    class ValidatedVector {
+      +embedding_space_fingerprint
+      +float32 components
+    }
+    class TenantSpaceRegistry {
+      +register(tenant_id, space)
+      +lookup(...)
+    }
+    class AuditSink {
+      <<port>>
+      +accept(space_registration_intent)
+    }
+
+    RelayIdentifier --> TenantSpaceRegistry : tenant identifier
+    EmbeddingSpaceManifest --> TenantSpaceRegistry : registered space
+    EmbeddingSpaceManifest --> ValidatedVector : validates against
+    TenantSpaceRegistry --> AuditSink : audit before visibility
+```
+
+## As-built PostgreSQL M1 slice
+
+<!-- status:present-current -->
+
+The active PR carries physical migrations for the tenant registry, immutable canonical manifest, and audit boundary. This is active-PR implementation, not protected-main or release evidence.
 
 ```mermaid
 erDiagram
-    tenant_partition ||--o{ embedding_space_record : owns
-    tenant_partition ||--o{ adapter_revision_record : owns
-    tenant_partition ||--o{ migration_policy_revision : owns
-    tenant_partition ||--o{ migration_evaluation_run : owns
-    tenant_partition ||--o{ conversion_receipt_record : owns
-    tenant_partition ||--o{ release_admission_record : owns
-    tenant_partition ||--o{ rollback_receipt_record : owns
+    EMBEDDING_SPACE_MANIFEST ||--o{ TENANT_SPACE_REGISTRY : canonical_identity
+    TENANT_SPACE_REGISTRY ||--o{ SPACE_REGISTRATION_AUDIT : deferred_reference
 
-    embedding_space_record ||--o{ adapter_revision_record : source_space
-    embedding_space_record ||--o{ adapter_revision_record : target_space
-    adapter_revision_record ||--o{ migration_evaluation_run : evaluates
-    migration_policy_revision ||--o{ migration_evaluation_run : governs
-    migration_evaluation_run ||--o| release_admission_record : supports
-    adapter_revision_record o|--o{ conversion_receipt_record : may_support
-    release_admission_record ||--o{ rollback_receipt_record : may_rollback
-
-    tenant_partition {
-        uuid tenant_partition_id PK
-        text tenant_reference UK
+    EMBEDDING_SPACE_MANIFEST {
+      text space_fingerprint PK
+      text manifest_version_code
+      text provider_identifier
+      text model_identifier
+      text model_revision
+      text modality_code
+      text input_role_code
+      text instruction_template_hash
+      text pooling_strategy_code
+      text normalization_strategy_code
+      bigint vector_dimension
+      text numeric_precision_code
+      text distance_metric_code
+      text preprocessing_policy_hash
+      timestamptz manifest_created_at
     }
 
-    embedding_space_record {
-        uuid embedding_space_record_id PK
-        uuid tenant_partition_id FK
-        text stable_space_identity
-        text material_identity_digest
-        int identity_version
-        timestamptz recorded_at
+    TENANT_SPACE_REGISTRY {
+      uuid tenant_space_record_id PK
+      uuid tenant_id
+      text space_fingerprint FK
+      timestamptz created_at
+      unique tenant_id_space_fingerprint "tenant_id, space_fingerprint"
     }
 
-    adapter_revision_record {
-        uuid adapter_revision_record_id PK
-        uuid tenant_partition_id FK
-        uuid source_space_record_id FK
-        uuid target_space_record_id FK
-        text adapter_artifact_digest
-        text adapter_method_revision
-        timestamptz recorded_at
-    }
-
-    migration_policy_revision {
-        uuid migration_policy_revision_id PK
-        uuid tenant_partition_id FK
-        text policy_revision_digest
-        text threshold_provenance_reference
-        text ood_method_revision
-        text acceptance_method_revision
-        timestamptz recorded_at
-    }
-
-    migration_evaluation_run {
-        uuid migration_evaluation_run_id PK
-        uuid tenant_partition_id FK
-        uuid adapter_revision_record_id FK
-        uuid migration_policy_revision_id FK
-        text fitting_dataset_identity
-        text calibration_dataset_identity
-        text evaluation_dataset_identity
-        bigint evaluation_denominator
-        bigint failure_denominator
-        text result_digest
-        timestamptz completed_at
-    }
-
-    conversion_receipt_record {
-        uuid conversion_receipt_record_id PK
-        uuid tenant_partition_id FK
-        uuid adapter_revision_record_id FK "nullable before adapter resolution"
-        text conversion_status
-        text source_vector_reference
-        text target_vector_reference
-        text abstention_reason_code
-        text error_reason_code
-        timestamptz completed_at
-    }
-
-    release_admission_record {
-        uuid release_admission_record_id PK
-        uuid tenant_partition_id FK
-        uuid migration_evaluation_run_id FK
-        text release_artifact_identity
-        text admission_decision
-        text release_provenance_digest
-        timestamptz admitted_at
-    }
-
-    rollback_receipt_record {
-        uuid rollback_receipt_record_id PK
-        uuid tenant_partition_id FK
-        uuid release_admission_record_id FK
-        text rollback_reason_code
-        text restored_release_identity
-        timestamptz completed_at
+    SPACE_REGISTRATION_AUDIT {
+      uuid audit_event_id PK
+      uuid tenant_id FK
+      text space_fingerprint FK
+      uuid actor_id
+      text action_code
+      timestamptz occurred_at
     }
 ```
 
-## Normalization and authority
+Physical source of truth:
 
-- `embedding_space_record` stores identity/evidence metadata, not vector bodies.
-- `adapter_revision_record` references source/target spaces instead of duplicating their material fields.
-- `migration_evaluation_run` references one adapter and one policy revision; dataset identities are immutable external evidence references, not copied datasets.
-- `conversion_receipt_record` stores bounded evidence/reference metadata; vector bytes remain with the owning runtime/vector store unless a future approved requirement establishes a separate encrypted evidence store.
-- `conversion_receipt_record.adapter_revision_record_id` is nullable because an `error` outcome can occur before adapter selection. A `converted` receipt requires a non-null adapter reference. An `abstained` receipt may carry one only when an adapter was resolved before the abstention decision. Status-specific database checks must enforce these combinations rather than making every outcome depend on an adapter.
-- release and rollback records are completed facts and therefore append-only after acceptance.
+- schema: `embedrelay_registry`;
+- canonical manifest table: `embedding_space_manifest`;
+- registry table: `tenant_space_registry`;
+- audit table: `space_registration_audit`;
+- low-level registration function: `register_tenant_space(uuid, text)`;
+- manifest-bearing registration function: `register_tenant_space_manifest(uuid, text, jsonb)`;
+- rollback gate: `embedrelay.allow_destructive_rollback=on`;
+- migrations: `migrations/0001_tenant_space_registry.*.sql` and `migrations/0002_embedding_space_manifest.*.sql`.
 
-## Tenant isolation
+`tenant_space_registry` and `space_registration_audit` use PostgreSQL 18 `uuidv7()` identifiers. `(tenant_id, space_fingerprint)` is unique. `space_registration_audit` has a deferred foreign key to that natural registration key so audit intent can be inserted before registry visibility within one transaction. `tenant_space_registry.space_fingerprint` has a deferred foreign key to the global canonical manifest table so the manifest can be materialized later in the same manifest-bearing transaction while every committed registration still resolves to complete immutable identity material.
 
-Every tenant-owned relation includes `tenant_partition_id`. Foreign keys between tenant-owned objects must be composite tenant-safe references or equivalent constraints so a valid object identifier from another tenant cannot satisfy a reference. A shared PostgreSQL deployment uses forced RLS or an equivalent fail-closed policy under a `NOSUPERUSER NOBYPASSRLS` application role.
+The canonical manifest table stores one v1 material row per exact fingerprint rather than duplicating provider/model/role/hash/dimension/metric fields per tenant. `register_tenant_space_manifest` validates the exact v1 JSON key set, value shape, Rust u32 dimension range, canonical material hashes, and then recomputes the Rust-compatible domain-separated SHA-256 fingerprint before persistence. A mismatch fails closed. Identical cross-tenant manifests therefore deduplicate by immutable fingerprint; tenant ownership remains independent in `tenant_space_registry`.
 
-## Identity and idempotency
+The migration enables and **forces RLS** on all three relations. Registry/audit policies compare each row's `tenant_id` with explicit `embedrelay.tenant_id`. Canonical manifest visibility is derived with an `EXISTS` check against the current tenant's authorized registry row, so an unregistered tenant cannot enumerate shared compatibility material.
 
-Stable business/evidence identities require explicit unique constraints separate from surrogate row identifiers. Item-level UPSERT semantics must define exact retry versus conflicting reuse before implementation. Concurrent insert tests must prove that duplicate races cannot create two accepted authorities.
+All three physical relations are append-only. Row update/delete and table truncate operations raise SQLSTATE `55000`. Destructive rollback is a separately gated migration operation, not ordinary product mutation.
 
-## Partitioning and lock policy
+Tenant registration remains intentionally not an UPSERT. Duplicate `(tenant_id, space_fingerprint)` registration raises the unique-key outcome; because audit insertion, registration, and manifest insert-or-match share one transaction, the losing duplicate/concurrent attempt does not leave a second audit event. Canonical manifest persistence has explicit item-level insert-or-match semantics because the same immutable compatibility fact is intentionally reusable across tenants; after conflict every material field is rechecked. A future request-replay contract still requires an explicit idempotency key.
 
-No partitioning or read/write split is prescribed today. Measure row/index contention, hot tenant/space/adapter keys, queue depth and transaction latency first. If partitioning is justified, tenant plus high-cardinality domain identity should be evaluated from measured distribution rather than a rule of thumb.
+### 3NF and contention boundary
 
-This ERD is a target fitness constraint. Migrations and actual tables are absent until a persistence slice implements and tests them.
+The M1 slice is in 3NF: immutable embedding-space compatibility facts live once in `embedding_space_manifest`; tenant-to-space association facts live in `tenant_space_registry`; audit-event facts live in `space_registration_audit`. Neither tenant registration nor audit duplicates mutable manifest material.
+
+Concurrency is localized to the global fingerprint primary key and tenant/fingerprint unique key. Two identical same-tenant registrations intentionally contend and produce one winner; two tenants registering the identical manifest may share the canonical row while retaining independent tenant registrations. No global application lock, read/write split, or partitioning is introduced without measured need; hot-partition mitigation must preserve tenant RLS and registration invariants when evidence justifies it.
+
+## Broader PostgreSQL control-plane target
+
+<!-- status:planned -->
+
+The physical M1 slice does not make the full target model as-built. Later milestones still own the following planned relations and their exact names/contracts:
+
+```mermaid
+erDiagram
+    TENANT_RECORD ||--o{ VECTOR_REFERENCE : owns
+    EMBEDDING_SPACE_MANIFEST ||--o{ VECTOR_REFERENCE : classifies
+    EMBEDDING_SPACE_MANIFEST ||--o{ ADAPTER_ARTIFACT : source_space
+    EMBEDDING_SPACE_MANIFEST ||--o{ ADAPTER_ARTIFACT : target_space
+    ADAPTER_ARTIFACT ||--o{ ADAPTER_EVALUATION : evaluated_by
+    ADAPTER_ARTIFACT ||--o{ MIGRATION_PLAN : uses
+    MIGRATION_PLAN ||--o{ MIGRATION_STAGE : contains
+    MIGRATION_PLAN ||--o{ INDEX_BINDING : routes
+    MIGRATION_PLAN ||--o{ BACKFILL_TASK : schedules
+    MIGRATION_PLAN ||--o{ MIGRATION_EVENT : emits
+    TENANT_RECORD ||--o{ AUDIT_EVENT : owns
+    EMBEDDING_SPACE_MANIFEST ||--o{ SPACE_DRIFT_EVENT : observed_for
+```
+
+Planned target objects still include `tenant_record`, `vector_reference`, `adapter_artifact`, `adapter_evaluation`, `migration_plan`, `migration_stage`, `index_binding`, `backfill_task`, `migration_event`, broader `audit_event`, and `space_drift_event`. The active `embedding_space_manifest` is the M1 canonical identity table; later migrations may extend lifecycle relationships without mutating its identity material.
+
+## Persistence invariants
+
+- Every operational tenant-owned record is tenant-bound directly or through a transactionally constrained parent.
+- UUIDv7 is an opaque identifier shape, not authorization or business chronology.
+- Equal vector dimensions never establish space compatibility.
+- A canonical space fingerprint and its material are immutable once registered; changed geometry becomes a new/quarantined space identity.
+- Current M1 durable registry, manifest, and audit records are append-only.
+- Adapter direction will remain explicit through separate source/target space identities.
+- Vector origin will distinguish native/translated/reconstructed/composed states when vector-reference persistence becomes executable.
+- Cross-space raw metric computation is forbidden by the Rust domain contract regardless of relational shape.
+
+## RLS and authorization boundary
+
+RLS is as-built for `tenant_space_registry`, `space_registration_audit`, and `embedding_space_manifest` on active PR #1. The PostgreSQL contracts use a non-superuser, non-`BYPASSRLS` role to prove same-tenant access, cross-tenant denial, and inability of an unregistered tenant to enumerate canonical manifest material. Broader service/admin/audit roles, KMS integration, retention/export governance, and future control-plane tables remain unimplemented and must not be inferred from this slice.
+
+## Evidence promotion rule
+
+This ERD describes active-PR source. It becomes protected-main truth only after the exact implementing head passes PostgreSQL 18.6 migration/RLS/concurrency/manifest/rollback/restore tests, Rust CI/security gates, and qualifying independent review, then merges without governance bypass. The logical restore fixture is acceptance evidence for this disposable M1 state only and does not establish production RTO/RPO/PITR/HA.

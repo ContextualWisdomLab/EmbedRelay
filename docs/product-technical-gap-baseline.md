@@ -1,31 +1,11 @@
-# Product and technical gap baseline
+# EmbedRelay Product / Technical Gap Baseline
 
-Status: Proposed
+**Status:** active-PR commercialization baseline
+**Scope:** ContextualWisdomLab/EmbedRelay, with causal shared-control-plane blockers linked explicitly
+**Last reconciled:** 2026-10-03
+**Release state:** pre-release; PR #1 remains Draft.
 
-Last reconciled: 2026-10-03
-
-This ledger is derived from live default `main@816dcacd4fc1903d91c5cae9b77e37e21811a78d`, Draft foundation PR #4, Draft public-surface PR #5, ADR/reference material, machine-readable conversion contract, and current GitHub review/check state. Pull-request evidence remains Proposed and is not a production, conformance, certification, benchmark, release, Pages-publication, or customer claim.
-
-## Product responsibility
-
-EmbedRelay owns embedding-space identity, fail-closed vector compatibility, governed directional conversion/migration, abstention, rollback evidence, migration-policy/evaluation receipts, and target-native terminal-state/backfill contracts.
-
-Adjacent authorities remain separate:
-
-- RankWeave: retrieval-list fusion, ranking evaluation and statistical comparison;
-- contextual-orchestrator: production LLM/provider routing, model discovery and provider credentials;
-- ConceptWeave: ontology and semantic-layer generation/publication;
-- semantic-data-portal: catalog governance, search and serving;
-- keyverse: ContextualWisdomLab deployment-profile identity-provider boundary;
-- embedding providers/runtimes: model execution/training;
-- vector stores: durable vector/index persistence;
-- ingest/retrieval products: source interpretation, semantic-unit chunking and business authorization.
-
-No sibling checkout, submodule farm, shared private application database, or direct foreign-table SQL is an integration contract.
-
-## Current exact-head baseline
-
-Transient workflow status is resolved live from GitHub rather than committed as durable truth. Every merge/release decision must re-fetch the exact PR head, base, review threads, reviews, required checks, workflow jobs/logs, rulesets and mergeability. Predecessor-head evidence is non-passing after any head change.
+Transient CI/review states are resolved live from GitHub rather than committed as durable truth. Every head change invalidates predecessor-head merge evidence.
 
 The current integration order is `PR #4 -> PR #5 -> PR #1`. All three remain
 Draft because effective default-branch governance and independent-review
@@ -33,113 +13,129 @@ capacity are not yet proven. **Draft is required until effective default-branch 
 must then obtain its own terminal required checks, zero valid unresolved
 findings, and qualifying independent approval before ordinary merge.
 
-| Area | Current evidence | Status | Commercialization Gap | Next Action / verification |
-| --- | --- | --- | --- | --- |
-| Product boundary | README, `docs/PRD.md`, root `ARCHITECTURE.md`, ADRs, `AGENTS.md` | Defined | Default `main` has not integrated this complete boundary and effective protection must be revalidated | Merge only through an ordinary governed path after fresh exact-head evidence |
-| Review lifecycle | `PR #4 -> PR #5 -> PR #1`; all Draft | Not ready | Effective default-branch governance, terminal required checks, and qualifying independent approval remain unsatisfied | Keep every stack member Draft until prerequisites are proven, then review and merge parent-first |
-| Embedding-space identity | ADR/contract design uses canonical material fields, RFC 8785 serialization and SHA-256 stable identity | Contract candidate | No executable Rust identity package/release on this PR | Add Rust value object and golden cross-language canonicalization fixtures test-first |
-| Conversion result | `docs/contracts/conversion-response-v1.schema.json` with `converted` / `abstained` / `error` outcomes | Payload contract candidate | No executable conversion engine or HTTP boundary | Implement Rust-owned numerical boundary; add OpenAPI before any HTTP release claim |
-| Numerical/vector computation | `docs/TRD.md`, architecture and agent policy require Rust ownership | Missing runtime | No production vector/matrix migration kernel, CPU multithreading or GPU contract | Build minimal deterministic Rust kernel with realistic numerical accuracy and failure-denominator tests |
-| Migration governance | Evidence-derived approval/hold/reject and rollback decisions are documented | Design defined | No executable policy revision, evaluation-run or release-admission state machine | Add versioned value objects/receipts; thresholds require explicit buyer/SLO/scientific/statistical provenance |
-| OOD / abstention | Explicit fail-closed abstention design and test strategy | Design defined | No calibrated OOD contract/evaluation evidence | Define calibration dataset identity, estimator/statistical method and reproducible calibration/abstention tests; no rule-of-thumb thresholds |
-| Retrieval continuity | Target-native retrieval baseline is required | Planned | No representative retrieval benchmark or exact target-native comparison contract | Use RankWeave for retrieval evaluation/statistical comparison; keep raw ranking math out of ad-hoc Python production paths |
-| Identity / authorization | OIDC + operation authorization boundary; keyverse deployment profile | Design defined | No executable token/session verification, authorization adapter or tenant isolation proof | Add identity ACL and authorization port; reject unavailable/invalid identity before tenant work |
-| Persistence | `ARCHITECTURE.md`/`docs/TRD.md` plus conceptual `docs/ERD.md` define future 3NF/tenant/idempotency constraints | Not implemented | No migration, RLS, audit, concurrency or recovery evidence | Introduce persistence only when needed; preserve the conceptual ERD invariants with real migrations/tests |
-| Service API | Payload schema exists; TRD defines OpenAPI/async boundary | Pre-release only | No OpenAPI, async request lifecycle implementation, error/status transport contract or running service | Add OpenAPI 3.1.x with authenticated tenant/actor context before advertising an endpoint |
-| Security/privacy | Root `SECURITY.md`, architecture and identity ADR define trust/fail-closed boundaries | Design baseline | No executable threat controls, retention/access/export/audit implementation or secret/runtime evidence | Add misuse/tenant/adversarial tests with first runtime slice; keep certification claims separate from control design |
-| Operability | `docs/OPERABILITY.md` defines service lifecycle, compose, accelerator, observability, recovery and load gates | Design baseline | No deployed compose service, backup/restore, rollback, telemetry or incident evidence | Add deployment/recovery only after runtime/persistence exists; measure rather than invent RPO/RTO |
-| Performance | Operability baseline distinguishes synchronous <=20 ms target from async migration work | Unevidenced runtime | No network/load data | Add k6 once a network API exists; measure realistic auth/data/hardware and remove bottlenecks before readiness claim |
-| Test/documentation quality | Canonical README/PRD/TRD/UML/ERD/ADRs/references, security/test/operability, `AGENTS.md`, `CLAUDE.md`, architecture, changelog and this ledger; executable shell/Python contracts; `Documentation Quality` admits stacked and Draft pull requests | Executable foundation gate | Hosted exact-head result remains required after each change; runtime-specific evidence cannot exist before runtime | Require terminal hosted exact-head documentation gate; keep target diagrams/requirements distinct from future as-built runtime evidence |
-| Release/package | Apache-2.0 source/documentation grant; no published package claimed | Missing release | No immutable release, SBOM/provenance/package/container evidence | Establish release artifact identity only after executable exact-head GREEN and governance satisfaction |
-| Pages | `docs/index.md` is proposed source only | Not published | No protected integration, deployment, live HTTP, or rendered-source evidence | Verify actual publication before mentioning a Pages URL or availability |
+## Commercial product responsibility
 
-## DDD Context Map
+EmbedRelay owns embedding-continuity contracts: immutable embedding-space identity, vector compatibility, tenant-scoped registration, directional adapter fidelity, controlled migration, abstention, recovery evidence, and convergence to target-native embeddings. It does not own embedding-provider execution, vector-store internals, identity federation, or another ContextualWisdomLab product's private persistence. Those dependencies cross typed provider-neutral ports or anti-corruption layers.
 
-### Core subdomain — Embedding Continuity
+The bounded commercial promise is that operators can change embedding spaces without silently comparing incompatible vectors and without losing tenant isolation, auditability, rollback/recovery evidence, or retrieval-fidelity governance.
 
-Bounded context: **Embedding Continuity**.
+## Current feature specification and exact evidence
 
-Ubiquitous language:
+| Capability | Product owner / bounded context | Current evidence | Active-PR status | Next verification / action |
+|---|---|---|---|---|
+| Canonical embedding-space identity | Space Identity | `manifest.rs`, manifest tests, PRD-FR-001, ADR-0005 | implemented in Rust; frozen `sha256:<64 lowercase hex>` identity | exact-head Rust CI and independent review |
+| Cross-boundary dimension-number normalization | Space Identity / Space Registry | Rust manifest tests; PostgreSQL manifest contract | repaired test-first; exact positive decimal/exponent integers normalize to the same `u32` fingerprint while invalid values fail closed | exact-head Rust + PostgreSQL 18.6 contract evidence |
+| Full immutable canonical manifest persistence | Space Registry | `migrations/0002_embedding_space_manifest.*.sql`; `tests/postgres_manifest_persistence_contract.sh` | implemented on PR #1; full v1 material stored once per fingerprint and fingerprint recomputed in PostgreSQL | exact-head PostgreSQL 18.6 contract/security/review evidence |
+| Tenant registration + durable audit | Space Registry | migration 0001, Rust registry contract, PostgreSQL registry contract | implemented; registration duplicate-rejecting, audit-first, append-only | exact-head concurrency/RLS verification |
+| Fail-closed vector compatibility | Vector Safety | `vector.rs`, vector tests, PRD-FR-002 | implemented in Rust | exact-head coverage/security evidence |
+| Opaque UUIDv7 identifiers | Registry Identity | `identifier.rs`, RFC test vector | implemented in Rust | exact-head Rust CI |
+| Forced tenant isolation | Space Registry | RLS on registry/audit plus manifest visibility derived from registration | implemented on active PR | prove same-tenant visibility and outsider denial under non-bypass role |
+| Canonical identity recovery | Operability | `tests/postgres_backup_restore_contract.sh` | logical restore now reconciles 2 registry + 2 audit + 2 canonical manifest rows and controls | exact-head CI; do not infer production RTO/RPO/PITR |
+| Adapter registry/fitting | Adapter Fidelity | PRD/TRD/ADRs | planned | research-grounded Rust fitting/evaluation boundary |
+| Retrieval-level fidelity/calibration | Adapter Fidelity | PRD-FR-004, Test Strategy, ADR-0013 | planned | held-out retrieval protocol and evidence |
+| Confidence/abstention | Translation Policy | PRD-FR-010, ADR-0010 | planned | executable policy and OOD/calibration tests |
+| Buyer-operable migration workflow | Migration Orchestration | ADR-0008, Operability | planned | executable state machine/ports + realistic rollback |
+| Provider/vector-store interoperability | Integration Ports | ADR-0011 | planned | first typed real adapter; no private-database coupling |
+| Release/SBOM/provenance | Release Governance | ADR-0013 + organization workflows | partial | protected-head receipts and first public release |
 
-- `embedding_space_identity`
-- `vector_compatibility_result`
-- `directional_adapter_revision`
-- `conversion_receipt`
-- `abstention_reason`
-- `target_native_backfill`
+## DDD model
 
-Candidate aggregates/value objects:
+### Subdomains
 
-- `EmbeddingSpaceIdentity`: immutable value object for compatibility identity;
-- `ConversionReceipt`: completed conversion/abstention/error evidence, immutable after issuance;
-- `MigrationRelease`: immutable approved release aggregate only after deterministic admission succeeds.
+- **Core — Embedding Continuity:** space compatibility, directional translation evidence, abstention, migration correctness, and native-backfill convergence.
+- **Supporting — Registry Governance:** immutable canonical manifests, tenant-scoped registration, durable audit, recovery/release evidence, and drift quarantine.
+- **Supporting — Migration Operations:** dual-index state, rollback windows, backfill scheduling, and cutover evidence.
+- **Generic — Provider / Vector-store / Telemetry / KMS ports:** versioned integrations isolated behind anti-corruption layers.
 
-Invariants:
+### Context Map
 
-1. equal vector dimensions never imply compatible spaces by themselves;
-2. a conversion never silently becomes target-native truth without a governed migration/release decision;
-3. unsupported/OOD/ambiguous inputs abstain or fail closed rather than inventing compatibility;
-4. every acceptance threshold carries explicit provenance;
-5. raw provider credentials/tokens are outside the domain.
+```mermaid
+flowchart LR
+    SI[Space Identity & Registry] --> AF[Adapter Fidelity]
+    SI --> MO[Migration Orchestration]
+    AF --> MO
+    MO --> PP[Provider / Vector-store Ports]
+    SI --> RG[Release & Governance]
+    AF --> RG
+    MO --> RG
+    PP -. anti-corruption layer .-> EXT[External providers / vector stores]
+```
 
-### Supporting subdomain — Adapter Fitting and Evaluation
+The shared kernel is intentionally small: canonical space fingerprint, opaque identifiers, and versioned public value contracts. Provider SDK types, persistence implementation details, and another ContextualWisdomLab repository's private data model are not shared-kernel material.
 
-Owns fitting/calibration/evaluation dataset identities, adapter revision evidence and reproducible evaluation receipts. Fitting/calibration/evaluation data are disjoint unless an explicit statistical design says otherwise. All mathematical/vector/matrix production computation is Rust-owned.
+The canonical evidence graph is PRD → TRD → UML/ERD → Context Map → Gap →
+Action → Status. These artifacts describe active-PR evidence separately from
+protected-main and released behavior.
 
-### Supporting subdomain — Migration Governance
+### Ubiquitous language and aggregates
 
-Owns `migration_policy_revision`, `migration_evaluation_run`, approval/hold/reject, rollback, supersession and release-admission evidence. It does not own provider training infrastructure or consuming-product authorization.
+- **Embedding space:** complete immutable geometry/encoding contract, not a model marketing name.
+- **Space fingerprint:** exact compatibility identity `sha256:<64 lowercase hex>`; persistence never strips/reconstructs the prefix.
+- **SpaceRegistry aggregate:** one manifest-bearing tenant registration transaction. It does not absorb adapter or migration state.
+- **EmbeddingSpaceManifest value object / canonical persistence fact:** the 12 v1 material fields plus version whose deterministic fingerprint determines compatibility.
+- **RelayIdentifier value object:** opaque RFC 9562 UUIDv7; never authorization or business chronology.
+- **ValidatedVector value object:** Rust-validated vector bound to one complete embedding-space identity.
+- **Future AdapterArtifact aggregate:** directional artifact + evaluation/calibration evidence.
+- **Future MigrationPlan aggregate:** cutover/backfill state + rollback evidence.
+- **Domain event / audit intent:** `space_registration_intent`.
 
-### Generic/integration boundaries
+Core invariants: no raw cross-space comparison; equal dimension is insufficient; manifest↔fingerprint binding is deterministic; tenant authority is explicit; persisted registry/manifest/audit rows are immutable; audit + registration + canonical material commit atomically; duplicate same-tenant registration is rejected; identical canonical manifests may be shared across tenants without sharing tenant ownership.
 
-- Identity/federation: keyverse via ACL.
-- LLM/model routing where needed: contextual-orchestrator only.
-- Retrieval evaluation/statistical comparison: RankWeave.
-- Provider/model/vector-store APIs: ACL/adapters, never shared persistence.
+## Persistence contract
 
-## Persistence and naming acceptance
+```mermaid
+erDiagram
+    EMBEDDING_SPACE_MANIFEST ||--o{ TENANT_SPACE_REGISTRY : canonical_identity
+    TENANT_SPACE_REGISTRY ||--o{ SPACE_REGISTRATION_AUDIT : registration_evidence
+```
 
-No production database is present in the current PR. When persistence becomes necessary:
+`embedding_space_manifest` stores immutable v1 compatibility material once per exact fingerprint. `tenant_space_registry` stores tenant association facts. `space_registration_audit` stores append-only intent evidence. This is 3NF: canonical material is not duplicated per tenant or audit event.
 
-- named database objects contain at least two semantic words and use `snake_case` by default;
-- authoritative relational facts remain in 3NF;
-- tenant-owned tables include tenant scope and tenant-safe composite references;
-- immutable completed receipts/events are append-only;
-- item-level UPSERT behavior distinguishes exact idempotent retry from conflicting reuse;
-- concurrency tests prove duplicate/conflicting writes cannot create two accepted authorities;
-- hot-partition, locking and read/write separation decisions require measured evidence.
+`register_tenant_space_manifest(uuid, text, jsonb)` validates the exact v1 key set and primitive/value contracts, computes the Rust-compatible domain-separated SHA-256 using UTF-8 byte-length framing, and rejects a caller-supplied fingerprint that does not match. It then performs audit + tenant registration + canonical manifest insert-or-match in one transaction with deferred references.
 
-## Scientific and numerical acceptance
+Tenant registration is intentionally **not** an UPSERT. Its item-level contract is insert-only duplicate rejection. Canonical manifest persistence intentionally uses insert-or-match because the same immutable fingerprint may be referenced by multiple tenants; a conflict is accepted only after every canonical field matches. Replay-safe API idempotency remains a separate future contract requiring a stable request key.
 
-The numerical core must not use undocumented heuristics. Migration accuracy, OOD/abstention and rollback gates require a registered estimator/statistical/experimental design with a full failure denominator and reproducible dataset/revision identities. Realistic evaluation must compare transformed vectors against target-native embeddings/retrieval behavior; a same-dimension cosine result alone is not sufficient evidence of semantic continuity.
+Forced RLS applies to all three current relations. Manifest visibility is derived through an authorized row in `tenant_space_registry`, preventing an unregistered tenant from enumerating global canonical identity material. No global application lock, partitioning, CQRS/read replicas, or read/write split is introduced without measured pressure.
 
-Where retrieval-list evaluation or statistical comparison is needed, consume RankWeave rather than reimplementing a competing evaluation engine inside EmbedRelay. Production vector/linear/matrix computation remains Rust-owned.
+## Security, privacy, operability, and compliance direction
 
-## License and provenance boundary
+- Public/default database privileges are revoked and service grants are explicit.
+- Registry, manifest, and audit rows are append-only; destructive migration rollback requires explicit `embedrelay.allow_destructive_rollback=on`.
+- Logical recovery revalidates canonical material, durable UUIDs, counts, forced RLS, append-only triggers, ACLs/comments, registered tenant views, and outsider denial.
+- PITR/WAL archiving, cross-host/object-store transport, encryption/key rotation, HA/failover, and production-scale RTO/RPO remain deployment-dependent and unclaimed.
+- Embeddings, anchors, adapter artifacts, and query/migration evidence remain potentially sensitive; controls require purpose-bound authorization, encryption/KMS, retention/export governance, and incident evidence rather than destructive masking when masking would break the workload.
+- The product is designing toward CSAP/SOC 2 evidence quality; no certification is claimed.
 
-Repository-authored source and documentation are covered by the Apache License 2.0 file carried by foundation PR #4. That grant does not relicense future dependencies, imported model artifacts, datasets, or provider assets; every executable release still requires an SBOM, applicable NOTICE material, and provenance evidence bound to the immutable release.
+## Ecosystem boundary
 
-## Release gates
+EmbedRelay remains standalone. Optional ContextualWisdomLab consumers/providers such as `contextual-orchestrator`, Keyverse, pg-llm-batch, EgressWeave, and naruon integrate through typed public ports. Reusable supplier defects belong in their source repository. No EmbedRelay persistence object is a shared database contract for another repository.
 
-A first executable commercial release is not ready until all of the following are true on one exact candidate head:
+## License, Release, and Pages status
 
-1. Rust-owned embedding-space identity and numerical conversion/compatibility kernel;
-2. deterministic and realistic vector/migration tests, including OOD/abstention and full failure denominators;
-3. authenticated tenant/actor authorization and cross-tenant negative evidence;
-4. OpenAPI for any executable HTTP surface plus versioned payload schemas;
-5. explicit migration-policy/evaluation/release receipts and rollback/supersession behavior;
-6. complete current security/test/operability documentation for the shipped runtime;
-7. 100% touched production statement/branch/function/region coverage where tooling exposes it plus complete public Rust documentation;
-8. dependency/SAST/security/SBOM/provenance/package/container/recovery evidence appropriate to the shipped artifact;
-9. fresh exact-head required checks, zero valid unresolved review findings and qualifying independent approval;
-10. immutable release identifier and changelog entry without fabricated performance/customer/certification claims.
+- **License:** ContextualWisdomLab-authored source and documentation declare
+  `Apache-2.0 OR MIT`; third-party material keeps its own terms.
+- **Release:** no immutable package or service release exists; active-PR source
+  is not a consumer dependency.
+- **Pages:** `docs/index.md` is a publication source only. No GitHub Pages
+  publication is claimed without a verified live HTTPS deployment.
 
-## Active gap order
+## Commercialization gaps ordered by leverage
 
-1. Integrate the documentation/contract foundation through the normal protected path after fresh exact-head review/check evidence, including the repository-local documentation contract gate.
-2. Add the smallest Rust-first `EmbeddingSpaceIdentity` and fail-closed vector-compatibility slice with RED-first tests and cross-language canonicalization fixtures.
-3. Define a versioned migration policy/evaluation receipt and calibrated abstention contract without heuristic thresholds.
-4. Implement the directional conversion kernel and compare against target-native embeddings/retrieval evaluation; use RankWeave for ranking/statistical comparison.
-5. Add authenticated tenant/actor service admission and OpenAPI around the proven deterministic core.
-6. Add persistence/audit/recovery only when a real runtime requirement exists, preserving 3NF, tenant isolation, multiword naming and explicit idempotency.
-7. Add packaging, compose-compatible deployment, SBOM/provenance, recovery and realistic performance evidence before any production-readiness claim.
+| Priority | Gap | Owner | Evidence | Action | Exact-head status / next verification |
+|---|---|---|---|---|---|
+| P0 | Canonical manifest persistence verification | Space Registry | migration 0002 + manifest contract + frozen Rust fingerprint | prove exact schema/material/fingerprint/RLS/immutability/migration lifecycle on PostgreSQL 18.6 | implementation present on current writer branch; fresh exact-head CI required |
+| P0 | Durable registry + recovery verification | Space Registry / Operability | migrations 0001/0002 + registry/manifest/restore contracts | run RLS/concurrency/rollback/restore acceptance together | successor head requires fresh CI; queued/pending is non-passing |
+| P0 | Documentation truth reconciliation | Product Architecture | PRD/TRD/Architecture/ERD/API/Test/Traceability/baseline | keep active vs planned boundary synchronized | API idempotency demoted from premature Accepted/current wording to Proposed service semantics; fresh exact-head review required |
+| P0 | ADR identity and lifecycle integrity | Product Architecture | `docs/adr/README.md`; unique-number regression contract | keep one stable decision identity and Proposed status across the unmerged stack | repaired to collision-free ADR-0001…0013; fresh exact-head review required |
+| P0 | Non-vacuous exact coverage evidence | Release Governance | executable workflow regression proves the prior gate accepted zero, negative, boolean, and fractional summaries | require positive JSON integer totals and bounded integer covered counts for line/region/function/branch metrics | repaired test-first on the canonical writer branch; fresh exact-head CI required |
+| P0 | Central dependency-review availability | ContextualWisdomLab/.github | shared control-plane concern tracked upstream | repair causal owner if exact-head gate fails there; never bypass | consumer revalidates after upstream fix |
+| P0 | Independent approval | Release Governance | organization policy requires qualifying non-author approval | obtain independent review after exact-head checks | cannot self-approve/admin-bypass |
+| P1 | Replay-safe API idempotency, if buyer workflow needs it | Space Registry/API | tenant registration deliberately duplicate-rejects | define request-key/replay/mismatch/expiry/audit semantics test-first | next registry product gap |
+| P1 | Adapter fidelity/evaluation protocol | Adapter Fidelity | PRD/TRD only | add current research-grounded protocol then Rust implementation | planned |
+| P1 | Buyer-operable migration workflow | Migration Orchestration | no executable service/UI | implement state machine/ports and realistic rollback path | planned |
+| P2 | Production recovery architecture | Operability | disposable logical restore only | decide/test PITR/object-store/encryption/failover from deployment needs | not claimed today |
+| P2 | Release and downstream integration | Release Governance | no release/public service package | reproducible release receipts + first typed consumer | blocked on earlier evidence |
+
+## Verification rule
+
+Only evidence generated from the current exact PR head may promote an active-PR row. A predecessor head, queued workflow, PR comment, local reasoning, or mergeability flag is not a passing gate. The next exact-head verification must prove locked Rust dependency resolution, PostgreSQL 18.6 registry/manifest/RLS/concurrency/rollback/backup-restore behavior, exact LLVM coverage, central security status, review-thread state, and repository rules without governance weakening.

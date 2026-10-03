@@ -1,93 +1,206 @@
 # EmbedRelay Technical Requirements Document
 
-Status: pre-release target baseline; not as-built runtime evidence
-Last reconciled: 2026-09-02
+**Status:** Proposed target architecture with explicit active-PR M1 markers.
+**Last reviewed:** 2026-09-02
 
-## Runtime shape
+## 1. Technical objective
 
-The first executable implementation is a Rust-first modular service/library boundary. Domain computation is independent of HTTP, provider SDKs, vector stores, and persistence adapters.
+Provide a provider/vector-store-neutral Rust control and compute plane for identifying embedding spaces, validating vectors, registering/evaluating directional adapters, running confidence-gated translation, operating dual-index migrations, and converging to target-native backfill without silently mixing incompatible vector geometries.
 
-Target modules:
+## 2. Layered architecture
 
-- `space_identity`: immutable embedding-space value objects and canonical identity derivation;
-- `vector_validation`: precision/dimension/finite-value/norm and compatibility admission;
-- `adapter_contract`: directional adapter identity and deterministic conversion interface;
-- `migration_governance`: policy revision, evaluation receipt, approval/hold/reject, rollback and supersession;
-- `abstention_policy`: calibrated OOD/insufficient-evidence outcomes;
-- `release_admission`: immutable candidate/release evidence;
-- `identity_admission`: verified tenant/actor context and operation authorization;
-- `http_api`: OpenAPI-bound transport only after the core is proven;
-- persistence/provider/vector-store integrations behind ports and Anti-Corruption Layers.
+```text
+control plane
+  space registry
+  adapter registry
+  migration control
+  policy / audit
 
-## Numerical requirements
+data plane
+  vector validator
+  translation gateway
+  index router / rank fusion
+  native backfill scheduler
+compute plane
+  adapter fitting
+  evaluation / calibration
+  CPU reference + optional GPU kernels
+ports
+  embedding providers
+  vector stores
+  object storage / KMS
+  telemetry / audit
+```
 
-All production vector, matrix, linear-algebra and token-size computation is Rust-owned. Implementations must:
+Current PR #1 implements the first Rust contracts for space identity, vector safety, UUIDv7 identity, tenant registration, and audit-before-mutation intent **plus** an executable PostgreSQL tenant registry/audit/canonical-manifest persistence boundary. It does not yet implement the full control plane, deployable API, adapter fitting/evaluation, migration orchestration, provider/vector-store ports, or GPU compute.
 
-- reject NaN, infinity, unsupported precision/dimension and incompatible space identity before computation;
-- define deterministic normalization/metric semantics per space identity;
-- document floating-point tolerance from a numerical error model or validated implementation requirement rather than convenience constants;
-- support CPU parallelism without changing result semantics;
-- add GPU execution only with CPU/GPU parity evidence and explicit device/fallback reporting;
-- preserve a complete failure denominator in evaluation.
+## 3. Canonical space identity
 
-Python may orchestrate tests/research only where it is not a production numerical core.
+`embedding_space_id` is derived from a canonical manifest/fingerprint. Material fields include at least:
 
-## Migration evaluation contract
+- provider family and immutable model/revision identity;
+- input role (`query`, `document`, or another explicitly versioned role);
+- preprocessing/tokenization/truncation policy;
+- normalization policy;
+- output dimension;
+- scalar precision;
+- similarity/distance metric contract;
+- any provider parameter demonstrated to change vector geometry.
 
-A `migration_evaluation_run` binds:
+The canonical serialization and hash algorithm is versioned. A change that can alter geometry produces a different space identity; provider marketing/model names are insufficient. The active-PR PostgreSQL M1 slice now persists the complete v1 canonical manifest once per exact fingerprint in `embedding_space_manifest` and binds tenant registrations to it through a deferred foreign key. The database registration command validates the exact v1 key set and recomputes the Rust-compatible domain-separated SHA-256 fingerprint from UTF-8 byte-length framed fields before commit.
 
-- source and target space identities;
-- adapter revision identity and digest;
-- fitting, calibration and evaluation dataset/snapshot identities;
-- sample design and exclusion/failure denominator;
-- metric definitions and estimator/statistical method revisions;
-- target-native baseline identity;
-- uncertainty/OOD method and calibration evidence;
-- policy revision;
-- reproducible result digest and decision evidence.
+## 4. Vector validation
 
-Fitting/calibration/evaluation evidence is disjoint unless an explicit statistical design records why reuse is valid. Acceptance thresholds cannot exist without provenance.
+Before storage, training, metric comparison, translation, or routing:
 
-## Service contract
+- scalar precision must match the registered space;
+- dimension must match exactly;
+- every component must be finite;
+- subnormal/unsupported numerical values follow the explicit fail-closed policy;
+- zero norm is rejected when incompatible with the metric/normalization contract;
+- vector byte length and batch count are bounded;
+- tenant/space authorization is verified outside numerical content.
 
-Any executable network service:
+The current Rust M1 slice implements the core `float32` validation contract.
 
-- publishes OpenAPI 3.1.x for paths, operations, status/error behavior and security;
-- uses versioned JSON Schema-compatible payload definitions;
-- validates trusted OIDC identity and operation authorization before tenant-scoped vector work;
-- supports asynchronous handling for work that can exceed request deadlines rather than blocking indefinitely;
-- returns stable typed conversion/abstention/error contracts;
-- never accepts caller-supplied tenant/actor identity as authoritative when it conflicts with verified claims.
+## 5. Directional adapters
 
-## Persistence target
+Adapter identity is directional and role-specific:
 
-No runtime database is claimed today. If introduced, PostgreSQL or equivalent relational persistence must use:
+```text
+(source_space_id, target_space_id, input_role, algorithm_version, artifact_digest)
+```
 
-- 3NF authoritative facts;
-- descriptive two-or-more-word `snake_case` tables, constraints, indexes, policies and migration objects;
-- explicit tenant scope and tenant-safe composite foreign keys;
-- forced RLS/equivalent fail-closed isolation for shared-tenancy designs;
-- append-only completed evidence where history is authoritative;
-- item-level UPSERT/idempotency rules with conflict rejection;
-- transaction/lock boundaries matched to minimal aggregates;
-- measured contention/hot-partition evidence before partitioning/read-write separation.
+A→B does not imply B→A. Query→legacy-document and legacy-document→target-document mappings may have distinct losses and acceptance criteria.
 
-Conceptual future relations may include `embedding_space_record`, `adapter_revision_record`, `migration_policy_revision`, `migration_evaluation_run`, `conversion_receipt_record`, `release_admission_record`, and `rollback_receipt_record`. These are target names, not current tables.
+### P0 fitting algorithms
 
-## Security and privacy
+- orthogonal Procrustes;
+- ridge/regularized linear regression;
+- low-rank affine mapping;
+- bounded residual MLP only after a simpler-model residual diagnostic justifies it.
 
-- Keyverse is the CWL deployment-profile identity authority, integrated through an ACL.
-- Raw bearer tokens/provider keys are transport secrets, never domain attributes.
-- Logs/audit must identify action, actor reference, tenant, correlation, policy/release identities and outcome without copying vector/provider payloads by default.
-- Non-masking protection for operationally required sensitive evidence uses authorization, purpose binding, encryption, audit, retention/legal-hold and export controls.
-- Secrets remain in the platform secret boundary; public packages/releases contain no embedded secrets.
+Production training arithmetic is Rust. CPU `f64`/high-precision accumulation is the numerical reference where material. GPU execution is added only after profiling demonstrates benefit and must pass parity/recovery gates.
 
-## Operability and performance
+## 6. Anchor/evaluation data
 
-Network runtime, when present, requires health/readiness, structured telemetry, bounded queues/timeouts, graceful shutdown and connection-lifecycle tests. Container delivery should remain compose-compatible with Docker/Podman/Colima and avoid assuming Kubernetes-specific behavior.
+Paired anchors require provenance, sampling policy, role/language/domain coverage, duplicate control, temporal split where drift matters, tenant authorization, and poisoning checks. Train/evaluation anchors must be separated by content/entity where leakage could inflate fidelity.
 
-The user-specified p95 <=20 ms page/request objective is a release target only for synchronous endpoints whose workload permits it; it must be measured with realistic hardware/data and k6 after a network surface exists. Expensive migration/evaluation work belongs in asynchronous jobs and is not misrepresented as a 20 ms operation.
+Evaluation records include:
 
-## Verification
+- vector-space transformation error/alignment;
+- neighborhood preservation;
+- retrieval Recall@k, MRR/NDCG as appropriate;
+- OOD/domain/language slices;
+- confidence calibration/Brier/ECE where applicable;
+- abstention/error tradeoff;
+- native-target baseline;
+- source-space baseline;
+- uncertainty intervals/bootstrap where material.
 
-Each executable slice follows RED -> smallest root-cause GREEN -> exact-head full verification. Release evidence includes relevant Rust fmt/test/clippy/rustdoc/coverage, contract tests, security/SAST/dependency review, tenant/adversarial tests, SBOM/provenance, recovery evidence when persistence exists, and qualifying independent review.
+## 7. Confidence gate
+
+Every translation may return:
+
+```text
+translated
+abstained_low_confidence
+abstained_ood
+abstained_policy
+adapter_unavailable
+space_mismatch
+invalid_vector
+```
+
+The confidence gate never silently substitutes an incompatible adapter. Fallbacks are explicit: native target encode, source-index query, dual retrieval, queued backfill, or operator review.
+
+## 8. Dual-index routing
+
+During migration a query may be evaluated against:
+
+- target-native index;
+- source/legacy index via target→legacy query adapter;
+- translated target index where policy permits.
+
+Raw similarity scores from different spaces are not averaged. Default fusion is rank-level (for example reciprocal-rank-style fusion) or a separately trained reranker with its own evaluation contract.
+
+## 9. Native backfill
+
+Backfill prioritization can use uncertainty, access frequency, business criticality, source availability, and migration deadline. Each record tracks vector origin and source hash/version. The final accepted state should be target-native for all records that can legally and technically be re-encoded.
+
+## 10. Data and tenant model
+
+The **active-PR M1 physical persistence slice** uses PostgreSQL 18.x and remains deliberately narrow:
+
+- schema `embedrelay_registry`;
+- table `embedding_space_manifest(space_fingerprint, manifest_version_code, provider_identifier, model_identifier, model_revision, modality_code, input_role_code, instruction_template_hash, pooling_strategy_code, normalization_strategy_code, vector_dimension, numeric_precision_code, distance_metric_code, preprocessing_policy_hash, manifest_created_at)`;
+- table `tenant_space_registry(tenant_space_record_id, tenant_id, space_fingerprint, created_at)`;
+- table `space_registration_audit(audit_event_id, tenant_id, space_fingerprint, actor_id, action_code, occurred_at)`;
+- global canonical manifest identity keyed by exact `space_fingerprint`, with separate unique `(tenant_id, space_fingerprint)` tenant registration identity;
+- PostgreSQL `uuidv7()` for durable registration/event identifiers;
+- deferred foreign keys from audit→tenant registration and tenant registration→canonical manifest, allowing audit-first ordering and manifest materialization in one transaction while requiring both referenced facts at commit;
+- forced RLS on all three tables: tenant registry/audit are directly tenant-scoped and manifest visibility is derived from the tenant's authorized registration;
+- append-only mutation/truncate denial;
+- public/default privileges revoked;
+- guarded destructive rollback for both persistence migrations.
+
+This slice remains in 3NF: immutable compatibility material is stored once per canonical fingerprint, tenant ownership/registration is stored separately, and audit-event facts remain separate. The manifest registration function validates the complete v1 JSON shape, rejects unknown keys and invalid material, recomputes the exact Rust-compatible fingerprint with PostgreSQL core SHA-256, then performs audit + tenant registration + canonical insert-or-match atomically. It does **not** yet persist adapters, vector references, evaluation records, migration plans/stages, index bindings, backfill tasks, drift events, or broader policy state.
+
+UUIDv7 identifiers are opaque durable IDs only; tenant authorization and business chronology remain explicit relational/context data.
+
+## 11. Concurrency and idempotency
+
+Current M1 durable registration has one minimal transaction boundary: one manifest-bearing tenant/space registration attempt. Audit intent is inserted first, tenant registration follows, and the canonical manifest row is inserted or matched in the same transaction; deferred references require a complete committed state.
+
+Tenant registration remains deliberately **duplicate-rejecting, not UPSERT-based**. Concurrent same-tenant/space registration is serialized by the unique `(tenant_id, space_fingerprint)` key and must produce exactly one committed registry row and one committed audit event; the losing unique-violation transaction rolls its audit insert back. Canonical manifest persistence has a different item-level contract: identical manifest material may be shared across tenants by fingerprint, so it uses explicit insert-or-match semantics and verifies every canonical field after a conflict. A future replay-safe request API still requires a stable request/idempotency key and separate test-first semantics.
+
+No global application lock, partitioning scheme, or read/write split is justified yet. Add partitioning, CQRS, or replicas only from measured hot-key/read pressure while preserving forced RLS and the same item-level invariants.
+
+## 12. API/port contracts
+
+Provider and vector-store integrations sit behind versioned ports. Core logic never assumes a single vendor's model name, index score semantics, batch shape, or identifier format. Every adapter validates provider response dimension/fingerprint before accepting data. The current PostgreSQL schema is a private persistence implementation boundary, not an integration API for another repository.
+
+## 13. Security
+
+- embeddings/anchors/adapters are sensitive assets;
+- tenant identity is explicit and not vector-derived;
+- the active M1 persistence slice uses forced RLS and a non-`BYPASSRLS` adversarial contract;
+- canonical manifest visibility is denied unless the current tenant has a matching registration;
+- registry/manifest/audit rows are append-only; destructive rollback is separately gated;
+- artifacts will be digested/signed and immutable after release;
+- training/evaluation input provenance is auditable;
+- poisoned anchors, model-output drift, inversion/extraction, cross-tenant query, replay, rollback tampering, and malicious artifact loading are in threat scope;
+- PII handling uses purpose-bound access/encryption/retention/export controls rather than default destructive masking.
+
+The M1 persistence evidence does not establish broader KMS, retention/export, residency, privileged-admin, incident-response, CSAP, or SOC 2 certification claims.
+
+## 14. Observability
+
+Record per migration/adapter:
+
+- eligible/adapted/abstained/native counts;
+- confidence distribution;
+- retrieval-fidelity metrics;
+- source/target/index versions;
+- latency/throughput and compute backend;
+- GPU/CPU memory/time where material;
+- backfill progress;
+- drift/rollback events;
+- audit/provenance completeness.
+
+Do not expose raw vectors or protected text in ordinary logs. For the current M1 registry, database verification evidence must identify exact migration/test version and head without logging sensitive payloads.
+
+## 15. M1 exit criteria
+
+M1 Space Registry and Vector Safety is complete only after:
+
+- durable PostgreSQL migrations and guarded rollback — **active-PR implemented; exact-head verification required**;
+- tenant RLS/authorization enforcement — **active-PR implemented for registry, audit, and canonical-manifest visibility; exact-head verification required**;
+- immutable complete space manifest/fingerprint storage — **active-PR implemented through migration 0002 and manifest-bearing registration; exact-head verification required**;
+- append-only durable audit and transactional concurrency behavior — **active-PR implemented; exact-head verification required**;
+- exact production coverage/docstrings and locked dependency resolution — **CI contract present; current-head evidence required**;
+- security/threat tests — **partial; central dependency-review availability remains an external governance blocker when HTTP 403 recurs**;
+- operability/recovery evidence — **logical backup/restore acceptance now includes canonical manifest material; production RTO/RPO/PITR remains deployment-dependent and unclaimed**;
+- integrated current-head CI/security/independent review — **required before Draft can be considered ready**.
+
+Adapter training and dual-index migration belong to later milestones after this substrate is accepted.

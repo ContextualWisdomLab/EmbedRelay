@@ -1,158 +1,169 @@
-# EmbedRelay UML baseline
+# EmbedRelay UML and Runtime Views
 
-Status: pre-release target model; not as-built runtime evidence
-Last reconciled: 2026-09-02
+**Status:** Proposed target views; current M1 as-built behavior is marked separately.
+**Last reviewed:** 2026-08-15
 
-## Bounded-context component view
-
-```mermaid
-flowchart LR
-    Caller[Consuming application]
-    Identity[Keyverse / deployment identity authority]
-    API[HTTP API / OpenAPI adapter]
-    Admission[Identity admission + operation authorization]
-    Continuity[Embedding Continuity core]
-    Governance[Migration Governance]
-    Evaluation[Adapter Fitting & Evaluation]
-    Release[Release Admission]
-    Provider[Embedding provider/runtime ACL]
-    Store[Vector-store ACL]
-    RankWeave[RankWeave evaluation port]
-    Orchestrator[contextual-orchestrator, if model routing is required]
-    Persistence[(Future evidence persistence)]
-
-    Caller --> API
-    API --> Admission
-    Admission --> Identity
-    Admission --> Continuity
-    Continuity --> Provider
-    Continuity --> Governance
-    Governance --> Evaluation
-    Evaluation --> RankWeave
-    Governance --> Release
-    Release --> Store
-    Governance --> Persistence
-    Evaluation --> Persistence
-    API -. only if LLM/provider routing is required .-> Orchestrator
-```
-
-The arrows show target dependency direction, not current deployed services. The domain does not depend on provider SDKs, vector-store implementations, Keyverse internals, RankWeave internals, or contextual-orchestrator persistence.
-
-## Conversion sequence
+## Current M1 registration sequence
 
 ```mermaid
 sequenceDiagram
-    participant C as Caller
-    participant A as API/Admission
-    participant I as Identity authority
-    participant E as Embedding Continuity
-    participant P as Provider/adapter ACL
-    participant G as Migration Governance
+    actor Client
+    participant Registry as TenantSpaceRegistry
+    participant Manifest as Space Manifest
+    participant Audit as AuditSink
 
-    C->>A: conversion request + bearer + source/target IDs
-    A->>I: verify issuer/audience/time/tenant/actor
-    I-->>A: verified identity evidence
-    A->>A: authorize operation
-    alt invalid identity or denied/unavailable authorization
-        A-->>C: stable fail-closed error
-    else admitted
-        A->>E: verified tenant/actor + bounded request
-        E->>E: validate source vector and space compatibility
-        alt unsupported / OOD / insufficient evidence
-            E-->>C: abstained/error receipt
-        else conversion allowed
-            E->>P: directional adapter revision + vector
-            P-->>E: converted vector + adapter evidence
-            E->>G: bind conversion to policy/release context
-            G-->>E: governed receipt context
-            E-->>C: converted receipt, origin=translated
-        end
+    Client->>Manifest: canonical manifest
+    Manifest-->>Client: embedding-space fingerprint
+    Client->>Registry: register(tenant_id, manifest)
+    Registry->>Registry: validate UUIDv7 + canonical fingerprint
+    Registry->>Registry: reject duplicate tenant/space before audit intent
+    Registry->>Audit: space_registration_intent
+    alt audit accepted
+        Audit-->>Registry: accepted
+        Registry->>Registry: make registration observable
+        Registry-->>Client: registration
+    else audit rejected
+        Audit-->>Registry: rejected
+        Registry-->>Client: error; state unchanged
     end
 ```
 
-An `error` may occur before adapter selection and therefore does not require an adapter identity. A `converted` outcome is adapter-bound; an `abstained` outcome may be adapter-bound only when the adapter was resolved before abstention.
+## Target adapter training sequence
 
-## Migration-release state model
+```mermaid
+sequenceDiagram
+    actor Operator
+    participant Registry as Space/Adapter Registry
+    participant Anchor as Anchor Evidence
+    participant Forge as Adapter Forge
+    participant CPU as CPU Reference
+    participant GPU as GPU Backend
+    participant Bench as Fidelity Bench
+
+    Operator->>Registry: request source→target candidate (input_role=query or document, target_role=legacy_document)
+    Registry->>Anchor: resolve authorized paired evidence
+    Anchor-->>Forge: train/eval split + provenance
+    Forge->>CPU: fit/reference metrics
+    opt computationally material GPU path
+        Forge->>GPU: fit batched kernel
+        GPU-->>CPU: parity evidence
+    end
+    Forge->>Bench: immutable candidate artifact
+    Bench->>Bench: vector + retrieval + OOD + calibration
+    Bench-->>Registry: evaluation evidence
+    Registry-->>Operator: approve/abstain/reject decision candidate
+```
+
+## Target query routing sequence
+
+```mermaid
+sequenceDiagram
+    actor Client
+    participant Encoder as Target Encoder
+    participant Validator as Vector Validator
+    participant Gateway as Translation Gateway
+    participant Gate as Confidence Gate
+    participant Target as Target Native Index
+    participant Legacy as Legacy Index
+    participant Fusion as Rank Fusion/Reranker
+
+    Client->>Encoder: query text
+    Encoder-->>Validator: target-space query vector
+    Validator-->>Gateway: validated target vector + space id
+    par target path
+        Gateway->>Target: native target query
+        Target-->>Fusion: ranked target results
+    and legacy bridge path
+        Gateway->>Gate: target→legacy adapter (input_role=query, target_role=legacy_document) + confidence
+        alt eligible
+            Gate-->>Gateway: translated legacy-space query
+            Gateway->>Legacy: legacy query
+            Legacy-->>Fusion: ranked legacy results
+        else abstain
+            Gate-->>Fusion: no legacy result + reason
+        end
+    end
+    Fusion-->>Client: fused results + provenance/origin
+```
+
+## Migration state machine
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Candidate
-    Candidate --> Evaluating: immutable adapter/policy/evidence identities pinned
-    Evaluating --> Hold: evidence incomplete / uncertainty / OOD gate not satisfied
-    Evaluating --> Reject: policy violation or failed acceptance evidence
-    Evaluating --> Approved: all versioned evidence gates satisfied
-    Hold --> Evaluating: new evidence revision
-    Approved --> Released: exact-head artifact admission + governance
-    Released --> Superseded: newer admitted release
-    Released --> RolledBack: rollback gate invoked
-    Superseded --> [*]
-    RolledBack --> [*]
-    Reject --> [*]
+    [*] --> planned
+    planned --> evaluated
+    evaluated --> rejected: fidelity/security insufficient
+    evaluated --> dual_index: accepted bridge
+    dual_index --> canary
+    canary --> dual_index: rollback
+    canary --> progressive_cutover
+    progressive_cutover --> dual_index: rollback
+    progressive_cutover --> target_primary
+    target_primary --> native_backfill
+    native_backfill --> source_retention_window
+    source_retention_window --> completed
+    rejected --> [*]
+    completed --> [*]
 ```
 
-No transition is authorized by narrative text alone. Thresholds and decision inputs belong to immutable versioned policy/evaluation evidence.
-
-## Domain type sketch
+## Authority flow
 
 ```mermaid
-classDiagram
-    class EmbeddingSpaceIdentity {
-      +identity_version
-      +stable_space_id
-      +model_identity
-      +dimension
-      +precision
-      +metric
-      +normalization
-      +preprocessing_identity
-      +role_identity
-    }
+flowchart LR
+    TENANT[Tenant operator / service identity]
+    POLICY[Authorization + policy]
+    REG[Space/adapter/migration control]
+    COMPUTE[Deterministic/statistical compute]
+    AUDIT[Append-only audit]
+    ROUTER[Data-plane router]
+    STORES[(Vector stores)]
 
-    class DirectionalAdapterRevision {
-      +adapter_revision_id
-      +source_space_id
-      +target_space_id
-      +artifact_digest
-    }
-
-    class ConversionReceipt {
-      +conversion_receipt_id
-      +status
-      +source_space_id
-      +target_space_id
-      +adapter_revision_id?
-      +vector_origin
-      +abstention_reason
-      +error_code
-    }
-
-    class MigrationPolicyRevision {
-      +migration_policy_revision_id
-      +threshold_provenance
-      +ood_method_revision
-      +acceptance_method_revision
-    }
-
-    class MigrationEvaluationRun {
-      +migration_evaluation_run_id
-      +fit_dataset_id
-      +calibration_dataset_id
-      +evaluation_dataset_id
-      +failure_denominator
-      +result_digest
-    }
-
-    class MigrationRelease {
-      +release_artifact_id
-      +decision
-      +supersedes_release_id
-    }
-
-    EmbeddingSpaceIdentity "1" --> "*" DirectionalAdapterRevision : source/target
-    DirectionalAdapterRevision "0..1" --> "0..*" ConversionReceipt : may support
-    MigrationPolicyRevision "1" --> "*" MigrationEvaluationRun : evaluates under
-    DirectionalAdapterRevision "1" --> "*" MigrationEvaluationRun : evaluated
-    MigrationEvaluationRun "1..*" --> "0..1" MigrationRelease : admits
+    TENANT --> POLICY
+    POLICY --> REG
+    REG --> AUDIT
+    REG --> COMPUTE
+    COMPUTE --> REG
+    REG --> ROUTER
+    ROUTER --> STORES
 ```
 
-These types are target ubiquitous-language constructs. Their presence in this document does not claim that corresponding Rust structs or database rows exist on the current branch.
+Vector contents, UUID timestamps, model names, and fingerprints never create authority. Authorization and tenant membership are explicit policy inputs.
+
+## Target deployment view
+
+<!-- status:planned -->
+
+```mermaid
+flowchart TB
+    subgraph standalone[Standalone deployment]
+        API[EmbedRelay API/control service]
+        WORKER[Compute/backfill workers]
+        PG[(PostgreSQL control plane)]
+        OBJ[(Artifact store/KMS)]
+        API --> PG
+        WORKER --> PG
+        WORKER --> OBJ
+    end
+
+    subgraph external[External provider-neutral ports]
+        ENC[Embedding providers]
+        VDB[Vector stores]
+        OBS[Telemetry/audit sinks]
+    end
+
+    API --> ENC
+    API --> VDB
+    WORKER --> ENC
+    WORKER --> VDB
+    API --> OBS
+    WORKER --> OBS
+```
+
+Current PR #1 has an active-PR PostgreSQL registry/manifest/audit persistence
+slice, but no deployable API, vector-store connector, provider connector, or
+compute worker. The complete deployment view remains target architecture and
+is not protected-main or release evidence.
+
+## Maturity rule
+
+Diagrams labelled target must not be used as evidence that the named service/database/adapter exists. When a target component becomes as-built, update these views, PRD/TRD, ERD, ADR status, tests, operability, and traceability in the implementing change.

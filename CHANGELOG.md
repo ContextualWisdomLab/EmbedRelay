@@ -1,35 +1,32 @@
 # Changelog
 
-All notable EmbedRelay changes are recorded here. This repository is pre-release; entries under **Unreleased** are not a published artifact or production claim.
+All notable changes to EmbedRelay are recorded here. The project has not published its first release; entries remain under **Unreleased** until the complete release-acceptance contract is satisfied.
 
 ## Unreleased
 
 ### Added
 
-- Buyer- and integrator-oriented README for embedding-space continuity and governed cross-model migration.
-- Apache License 2.0 repository grant after provenance review.
-- Embedding-space identity, migration-governance, service-contract, and identity/authorization architecture decisions.
-- Draft 2020-12 conversion-response payload contract with typed converted, abstained, and error outcomes.
-- Dependency-free documentation contract regression tests for canonical identifiers and digest constraints.
-- Executable payload-contract coverage for all three response variants, required fields, closed top-level/nested objects, malformed vectors, invalid abstention codes, and cross-variant/hybrid payload rejection.
-- Regression coverage requiring the canonical repository baselines and their documentation-index links to remain present, non-empty, and consistent with Rust numerical ownership, fail-closed threshold provenance, multiword persistence naming, and pre-release truth boundaries.
-- Exact-head `Documentation Quality` GitHub Actions gate using explicit Ubuntu 24.04, immutable checkout pinning, exact-SHA verification, documentation regression execution, and committed-range whitespace validation for both pull-request and push events.
-- Documentation Quality admission for stacked and Draft pull requests, so a non-`main` base or review-admission state cannot suppress exact-head repository checks.
-- Repository `AGENTS.md` and `CLAUDE.md` development boundaries.
-- Root `ARCHITECTURE.md` context map separating EmbedRelay from RankWeave, contextual-orchestrator, keyverse, model providers, vector stores, and ingest/retrieval hosts.
-- `docs/PRD.md` and `docs/TRD.md` buyer/product and Rust-first technical requirements for the first executable migration vertical.
-- `docs/UML.md` target component, conversion-sequence, release-state and domain-type diagrams with explicit non-as-built labeling.
-- `docs/ERD.md` conceptual future 3NF evidence model with tenant-safe references, multiword `snake_case` names, idempotency and measured partition/lock requirements; no current database is claimed.
-- Root `SECURITY.md` trust-boundary/threat baseline, including tenant isolation, space confusion, malformed/OOD vector handling, rollback integrity, credential leakage and supply-chain controls.
-- `docs/TEST_STRATEGY.md` covering numerical/vector, migration, OOD/abstention, tenant, persistence, HTTP, coverage and realistic test-data evidence.
-- `docs/OPERABILITY.md` covering async service lifecycle, Docker/Podman/Colima compatibility, accelerator parity, telemetry, recovery and measured k6/load requirements once a runtime exists.
-- `docs/product-technical-gap-baseline.md` commercialization ledger and exact-head verification policy.
-
-### Security
-
-- Explicit fail-closed tenant/actor authorization boundary for future executable service work.
-- Explicit prohibition on storing raw bearer tokens/provider credentials as domain attributes or treating sibling repository/database access as an integration contract.
+- Public documentation, contribution, security, licensing, conversion-response schema, and documentation-quality contracts integrated from the preserved documentation successor stack.
+- Strict RFC 9562 UUIDv7 identifiers for registry and audit keys. Generated identifiers are process-locally creation-ordered; external identifiers fail closed unless both the RFC variant and version-7 contract are satisfied, and parse failures do not reflect caller-controlled input.
+- Fail-closed Rust `float32` embedding-vector validation bound to the complete canonical embedding-space fingerprint. The contract rejects dimension mismatches, non-finite and subnormal components, zero-norm vectors, and scalar-precision mismatches, and permits a metric operation only after both vectors prove identical embedding-space identity rather than merely matching dimensions.
+- Tenant-isolated audit-before-mutation space registration. The storage-independent Rust reference contract keys registration by tenant plus complete canonical space fingerprint, rejects duplicates before emitting another intent, requires audit acceptance before state visibility, leaves state unchanged when audit recording fails, and permits equal space fingerprints to remain isolated across tenants.
+- PostgreSQL 18.x M1 registry migrations for `tenant_space_registry` and `space_registration_audit`, with native UUIDv7 identifiers, unique tenant/fingerprint registration, forced RLS, append-only row/truncate protection, audit-first transactional registration, deterministic duplicate/concurrent rejection, explicit public-privilege revocation, and guarded destructive rollback.
+- PostgreSQL 18.6 CI verification for missing tenant context, canonical fingerprint shape, UUIDv7 identifiers, cross-tenant denial, immutable registry/audit rows, concurrent identical registration, guarded rollback, and migration reapplication.
+- Disposable logical backup/restore acceptance that seeds two tenant-isolated registry/audit pairs, preserves exact durable UUID identities and row counts through `pg_dump`/`pg_restore`, revalidates forced RLS, append-only triggers, application-role privileges and table comments, proves both tenant views plus an outsider-denial view after restore, and emits fixture backup size/dump/restore duration without treating them as production RTO/RPO.
+- A tracked Cargo lockfile plus `--locked` stable-test and LLVM-coverage execution so hosted CI cannot silently resolve a different Rust dependency graph for an exact PR head.
+- Canonical PRD, TRD, architecture, UML, physical/current-plus-target ERD, API, security, threat-model, test, operability, traceability, commercialization-gap baseline, and thirteen-ADR documentation baselines, plus a Rust documentation contract that prevents planned adapter/migration boundaries from being misrepresented as already implemented.
 
 ### Changed
 
-- Clarified that the current branch is documentation/design plus pre-release payload-contract evidence only; it does not claim an executable service, package, deployment, benchmark, customer, certification, or released artifact.
+- The stacked documentation and runtime decision sets now use one collision-free ADR sequence (`0001` through `0013`). Every ADR and target baseline remains Proposed while the governing PR stack is unmerged, and a regression contract rejects duplicate, mismatched, or unindexed ADR identities.
+- Draft and ready pull requests now execute the same exact-head Rust and PostgreSQL contract workflow; only closed pull-request events are excluded, so stacked Draft PRs retain review evidence.
+- PostgreSQL registry and audit persistence now store the Rust domain's exact canonical `sha256:<64 lowercase hex>` space fingerprint unchanged. Bare 64-hex digests are rejected, preventing storage adapters or callers from silently stripping and later reconstructing identity material at the domain/persistence boundary; registry, concurrency, and backup/restore tests use the same canonical representation end to end.
+- Product, technical, architecture, ERD, traceability, operability, and documentation-fitness truth boundaries now distinguish the active-PR PostgreSQL M1 persistence/recovery acceptance slice from the broader still-planned durable control plane and later adapter/migration product surfaces.
+- Registration persistence is explicitly duplicate-rejecting rather than an implicit UPSERT. A future idempotent replay API must introduce a stable request key and a separate tested contract instead of heuristic conflict handling.
+- API and test-strategy documentation now marks replay-safe request idempotency as a Proposed service contract, not current M1 registry behavior, and separately records the implemented duplicate-rejection acceptance tests.
+- Rust and PostgreSQL now share one semantic-integer `vector_dimension` contract: exact decimal and exponent forms normalize to the same `u32` identity and fingerprint, while fractions, zero, negative values, and overflow fail closed.
+- The exact-production-coverage gate now accepts only positive, non-vacuous JSON integer totals and bounded integer covered counts. Zero, negative, boolean, fractional, and over-covered summaries fail closed instead of being coerced into apparent 100% coverage.
+
+### Security
+
+- The current M1 persistence slice requires explicit tenant session context, forces PostgreSQL RLS for registry, audit, and canonical-manifest visibility, denies ordinary update/delete/truncate operations, and keeps destructive rollback behind an explicit operator opt-in. Backup/restore acceptance re-proves RLS and append-only controls after logical recovery. These active-PR controls do not by themselves constitute protected-main, CSAP, SOC 2, or release evidence.

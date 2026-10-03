@@ -1,92 +1,171 @@
 # EmbedRelay Product Requirements Document
 
-Status: pre-release product baseline
-Last reconciled: 2026-09-02
+**Status:** Proposed product baseline; implementation maturity is tracked separately.
+**Product category:** Embedding Continuity Infrastructure
+**Last reviewed:** 2026-09-02
 
-## Product problem
+## 1. Product definition
 
-Embedding model upgrades can change tokenization, task prefixes, normalization, pooling, dimensionality, metric assumptions, provider preprocessing, and latent geometry. Equal vector dimensions do not make two embedding spaces interchangeable. A naive migration can silently corrupt retrieval quality, make rollback impossible, or mix source and target vectors without auditable evidence.
+EmbedRelay preserves retrieval continuity when embedding models, revisions, roles, preprocessing, normalization, dimensions, precision, or metric contracts change. It identifies incompatible embedding spaces, learns or registers fidelity-bounded **directional** adapters, operates controlled dual-index migration, abstains when confidence is insufficient, and converges to target-native embeddings as the terminal state.
 
-EmbedRelay exists to make cross-model embedding migration **explicit, directional, measurable, abstaining, and reversible**.
+The product does **not** claim a universal exact inverse between arbitrary embedding models. A translated vector is an approximation with measured fidelity and provenance, never a native target embedding by definition.
 
-## Primary users and jobs
+## 2. Buyer problem
 
-### Retrieval platform operator
+Enterprise retrieval/RAG systems accumulate large vector corpora that can become expensive or impossible to re-embed immediately when a model is deprecated, revised, compromised, regionally unavailable, or replaced for quality/cost reasons. Equal dimensionality does not imply compatible vector geometry. Blindly comparing vectors from different spaces can silently corrupt retrieval.
 
-Needs to migrate from one embedding space to another without silently mixing incompatible vectors, while retaining evidence that a migrated index satisfies a declared release policy and can be rolled back.
+EmbedRelay provides a governed migration bridge so operators can change models without treating incompatible vectors as interchangeable or forcing an all-at-once outage.
 
-### Search / RAG product engineer
+## 3. Primary users
 
-Needs a stable contract to identify embedding spaces, ask whether a source vector can be converted, distinguish target-native from translated vectors, and handle abstention/error outcomes deterministically.
+- **Retrieval/platform engineer:** migrate models while keeping search operational.
+- **AI/RAG platform owner:** quantify retrieval fidelity and rollback risk before cutover.
+- **Data/security steward:** track tenant, vector, adapter, anchor, migration, and audit provenance.
+- **SRE/operator:** run dual-index cutover/backfill with observable confidence, capacity, and rollback.
 
-### Security / governance reviewer
+## 4. Product invariants
 
-Needs exact tenant/actor authorization, immutable migration evidence, provenance-bound thresholds, failure denominators, release/rollback receipts, and no hidden provider credentials or cross-service database coupling.
+1. Raw vectors from different `embedding_space_id` values are never directly compared.
+2. Equal dimensions never establish compatibility.
+3. A→B and B→A are different directional artifacts.
+4. Query and document adapters are distinct by default.
+5. Cycle consistency is diagnostic/regularizing evidence, not proof of invertibility.
+6. Raw cosine scores from different spaces are not averaged; multi-index combination defaults to rank-level fusion/reranking.
+7. Production adapter chains are one hop by default.
+8. Low-confidence translation abstains rather than fabricating compatibility.
+9. Vector origin is explicit: `native`, `translated`, `reconstructed`, or `composed` where experimentally permitted.
+10. Provider/model-name stability does not imply space stability; observed output drift creates a new/quarantined space identity.
+11. Source collections remain available until cutover and rollback evidence are complete.
+12. The desired terminal state is target-native backfill whenever source data and policy permit it.
 
-### Applied research / evaluation owner
+## 5. Current M1 implementation maturity
 
-Needs disjoint fitting/calibration/evaluation evidence, target-native comparison, uncertainty/OOD analysis, and reproducible statistical acceptance without undocumented rules of thumb.
+PR #1 currently contains an active-PR Rust domain slice plus executable PostgreSQL registry, canonical-manifest, audit, and logical-recovery slices.
 
-## Product responsibility
+The Rust slice implements:
 
-EmbedRelay owns:
+- canonical embedding-space fingerprints;
+- fail-closed `float32` vector validation;
+- metric operations only within identical canonical space identity;
+- opaque RFC 9562 UUIDv7 identifiers;
+- tenant-isolated registry semantics;
+- audit-before-mutation `space_registration_intent` behavior;
+- exact Rust line/region/function/branch coverage gates;
+- reproducible dependency resolution through a tracked `Cargo.lock` and locked CI commands.
 
-- deterministic embedding-space identity;
-- fail-closed compatibility admission;
-- directional adapter/conversion contracts;
-- conversion/abstention/error receipts;
-- migration-policy and evaluation evidence;
-- approval/hold/reject and rollback/supersession semantics;
-- target-native terminal-state/backfill contracts.
+The PostgreSQL M1 slices implement on the active PR:
 
-It does not own model training/execution, vector-store persistence, retrieval fusion/statistical ranking evaluation, source document interpretation/chunking, identity-provider infrastructure, or general LLM/provider routing.
+- `tenant_space_registry`, `space_registration_audit`, and normalized `embedding_space_manifest` physical relations;
+- PostgreSQL 18 UUIDv7 identifiers for tenant registrations and audit events;
+- unique per-tenant space registration keyed by `(tenant_id, space_fingerprint)` while one immutable canonical manifest row is shared by exact fingerprint;
+- full v1 manifest material persistence with database-side recomputation of the Rust-compatible domain-separated SHA-256 fingerprint before registration;
+- forced tenant RLS: tenant registry/audit rows are directly tenant-scoped and canonical manifest visibility is derived through an authorized tenant registration;
+- append-only update/delete/truncate denial for durable registry, audit, and canonical manifest state;
+- audit-first registration coupled transactionally to registry visibility and canonical-manifest materialization through deferred references;
+- deterministic duplicate/concurrent rejection for tenant registrations; canonical manifest insertion uses explicit insert-or-match semantics and rejects conflicting material;
+- guarded destructive rollback and migration reapplication contracts;
+- PostgreSQL 18.6 CI contracts for RLS, UUIDv7, immutability, concurrency, manifest/fingerprint binding, migration lifecycle, and logical backup/restore.
 
-## First executable commercial vertical
+These are active-PR source facts only. They are not protected-main or release evidence until the **current exact head** passes all required PostgreSQL/Rust/security/review gates and merges. Adapter training, confidence calibration, dual-index routing, migration orchestration, provider/vector-store ports, production recovery architecture, and release readiness remain later planned/partial capabilities.
 
-A bounded first executable release must support one complete migration decision path:
+## 6. Functional requirements
 
-1. register/construct immutable source and target `EmbeddingSpaceIdentity` values;
-2. validate a source vector against its declared space;
-3. evaluate a pinned directional adapter revision;
-4. return one typed result: `converted`, `abstained`, or `error`;
-5. bind the result to source/target space identities and adapter provenance;
-6. evaluate the adapter/migration revision against a versioned migration policy using disjoint evidence and a full failure denominator;
-7. produce approval/hold/reject evidence;
-8. preserve target-native backfill and rollback/supersession semantics;
-9. expose the proven boundary through an authenticated OpenAPI HTTP surface only after the deterministic core is GREEN.
+### PRD-FR-001 Space registry
 
-## Functional requirements
+Every embedding space SHALL be identified by a canonical fingerprint covering model/provider revision, input role, preprocessing, normalization, dimension, scalar precision, metric contract, and other material encoding parameters. Space identity must be immutable once referenced by vectors or adapters.
 
-- Space identity changes whenever any material model/preprocessing/role/metric field changes.
-- Same dimension is never sufficient compatibility evidence.
-- Invalid/non-finite/wrong-dimension vectors fail closed.
-- OOD, insufficient evidence, unsupported space, and ambiguous conversion conditions abstain or fail; they never silently emit a zero or source-space vector as target-native.
-- Every numerical acceptance/OOD/rollback threshold identifies its provenance and policy revision.
-- Converted vectors remain distinguishable from target-native vectors until a governed migration/backfill transition completes.
-- Every completed conversion and migration decision is reproducibly attributable to exact source/target/adapter/policy/evaluation identities.
-- Tenant/actor authorization is established before tenant-scoped vector/migration work.
+The current active-PR physical registry persists the complete versioned v1 canonical manifest once per exact fingerprint in `embedding_space_manifest`, and separately persists tenant-to-space registration in `tenant_space_registry`. Database registration recomputes the same domain-separated SHA-256 identity contract as the Rust manifest implementation and fails closed on material/fingerprint mismatch. This keeps immutable compatibility material normalized rather than duplicating it per tenant.
 
-## Non-functional requirements
+### PRD-FR-002 Vector safety
 
-- Production numerical/vector/matrix/token-size computation is Rust-owned.
-- CPU multithreading and any GPU path have explicit deterministic contracts and parity tests.
-- Touched production surfaces target 100% statement/branch/function/region coverage where available and complete public Rust documentation.
-- No undocumented heuristic or rule-of-thumb acceptance weight/threshold.
-- No provider credential, bearer token, copied provider payload, or sibling private database becomes domain state.
-- Future relational persistence is 3NF with descriptive multiword `snake_case`, tenant-safe references, explicit item-level UPSERT/idempotency, concurrency evidence, and measured hot-partition/lock behavior.
-- Any HTTP release publishes OpenAPI and versioned payload schemas.
-- Release artifacts have immutable identity, changelog, SBOM/provenance/security evidence appropriate to the shipped form.
+Vector ingestion SHALL fail closed on precision/dimension mismatch, NaN/infinity, invalid zero norm where the metric requires non-zero norm, and other numerically invalid representations. Metric operations SHALL require complete compatible space identity.
 
-## Success evidence
+### PRD-FR-003 Directional adapter registry
 
-The first executable release is successful when a buyer can demonstrate, on one immutable exact release:
+Adapters SHALL record source space, target space, input role, algorithm family/version, training anchor provenance, evaluation evidence, confidence/calibration metadata, artifact digest/signature, and lifecycle state. Direction is never implicit.
 
-- deterministic space identity across independent implementations;
-- numerically correct conversion for the supported adapter class against known expected outputs;
-- calibrated abstention/OOD behavior with disclosed denominator and method;
-- target-native retrieval comparison using RankWeave for ranking/statistical evaluation where applicable;
-- fail-closed tenant and authorization tests;
-- reproducible migration approval/hold/reject and rollback evidence;
-- fresh exact-head tests/security/reviews and immutable release provenance.
+### PRD-FR-004 Fidelity evaluation
 
-No benchmark number, customer claim, conformance claim, or production-readiness claim exists until that evidence exists.
+Every production adapter SHALL be evaluated on held-out vector fidelity **and retrieval behavior**. Required evidence includes appropriate geometric error/alignment, retrieval Recall@k/NDCG/MRR where applicable, OOD performance, calibration, and uncertainty/abstention behavior. Vector similarity alone is insufficient for cutover.
+
+### PRD-FR-005 Translation gateway
+
+The data/query plane SHALL translate only when an eligible one-hop adapter exists, tenant and role authorization match, the vector passes source-space validation, and confidence policy allows the operation. Results must include origin and provenance.
+
+### PRD-FR-006 Dual-index migration
+
+A migration SHALL support source-native and target-native/translated index coexistence, rank-level fusion or approved reranking, phased traffic, rollback, and measurable cutover criteria.
+
+### PRD-FR-007 Native backfill
+
+The system SHALL prioritize target-native re-embedding based on risk, usage, uncertainty, and available source data until the migration reaches its approved terminal state. Translation is a bridge, not indefinite hidden technical debt.
+
+### PRD-FR-008 Tenant isolation and audit
+
+Registry, adapter, migration, evaluation, and audit state SHALL be tenant-scoped. Authorization may not be inferred from UUID timestamps, model name, vector content, or embedding-space fingerprint alone. State-changing actions require durable audit evidence.
+
+For the current M1 physical slice, direct tenant-scoped tables SHALL use forced RLS; a missing tenant context SHALL fail closed. Canonical manifest rows are global immutable compatibility facts but SHALL be visible to a tenant only through that tenant's authorized registration. Durable registry, manifest, and audit rows are append-only product records. Destructive migration rollback is an explicitly gated operator action rather than ordinary mutation.
+
+### PRD-FR-009 Drift detection
+
+Provider/model output changes that violate the registered fingerprint or statistical drift contract SHALL quarantine or register a new embedding space rather than silently updating the old one.
+
+### PRD-FR-010 Abstention
+
+When fidelity or OOD confidence is below policy threshold, the system SHALL abstain and choose an explicit fallback such as native re-embedding, source-index query, dual retrieval, or operator review.
+
+## 7. Algorithm portfolio
+
+### P0 production
+
+- orthogonal Procrustes where assumptions fit;
+- ridge/regularized linear mapping;
+- low-rank affine mapping;
+- bounded residual MLP when linear residual structure is insufficient and evidence justifies complexity.
+
+### P1 advanced
+
+- mixture/gating approaches for multi-model or OOD regimes;
+- local-isometry/vector-linking methods;
+- richer confidence models.
+
+### P1 experimental
+
+- unpaired/bidirectional latent translation when paired anchors/source text are unavailable.
+
+Experimental methods may not become automatic production cutover gates without retrieval-level validation, calibration, threat review, and an Accepted ADR.
+
+## 8. Non-goals
+
+- claiming translated vectors are mathematically identical to target-native vectors;
+- unlimited multi-hop adapter composition;
+- comparing raw scores across incompatible spaces;
+- storing tenant identity inside embedding values or UUID timestamp bits;
+- treating vector migration as a substitute for eventual native backfill;
+- giving an LLM authority over numerical compatibility or cutover gates that deterministic/statistical evidence can decide.
+
+## 9. Quality requirements
+
+- production arithmetic in Rust;
+- exact production line/region/function/branch coverage where LLVM tooling exposes it;
+- public Rust documentation coverage enforced by lints;
+- reproducible Rust dependency resolution from a committed lockfile for release-bound source;
+- executable PostgreSQL migration/RLS/concurrency/rollback/manifest/recovery tests for the M1 persistence slice;
+- true-transform/parameter-recovery simulations for adapter algorithms;
+- CPU reference and GPU parity when a computationally material GPU backend is introduced;
+- realistic retrieval benchmarks, OOD splits, confidence calibration, migration rollback/replay, tenant isolation, poisoned-anchor, inversion, and drift tests;
+- no skipped required scientific/security gate counted as passing.
+
+## 10. Security and privacy
+
+Embeddings, anchors, adapter weights, query logs, and migration artifacts are potentially sensitive. Controls SHALL use tenant-bound authorization, encryption/KMS, bounded retention, auditable export, signed artifacts, anchor-poisoning defenses, inversion-risk review, and purpose-bound access rather than assuming vectors are anonymous.
+
+The active-PR registry slice supplies forced-RLS and append-only persistence boundaries for tenant registrations, audit events, and canonical manifest visibility but does not yet implement the broader KMS, retention/export, incident, or service/admin-role design. No CSAP or SOC 2 certification is claimed from this M1 evidence alone.
+
+## 11. Standalone and ecosystem compatibility
+
+EmbedRelay must operate independently through provider-neutral ports. Optional CWL integrations may connect contextual-orchestrator, naruon, pg-llm-batch, EgressWeave, Keyverse, or other services through typed versioned interfaces. No integration may require direct access to another application's private database.
+
+## 12. Release acceptance
+
+A release requires integrated protected-head evidence for exact coverage, security, tenant controls, migrations/rollback, canonical-manifest identity binding, backup/recovery appropriate to the persisted surface, adapter/migration evaluation where those capabilities are included, reproducible artifacts, SBOM/provenance, operability, independent review, and real retrieval fidelity. The current PR is pre-release and remains Draft until its M1 exit criteria are met.
