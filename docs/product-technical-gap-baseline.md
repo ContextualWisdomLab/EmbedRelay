@@ -1,6 +1,6 @@
 # Product and technical gap baseline
 
-Last reconciled: 2026-10-02
+Last reconciled: 2026-10-03
 
 This ledger is derived from the live EmbedRelay repository, current PR #4 product boundary, ADR/reference material, machine-readable conversion contract, and current GitHub review/check state. It is a commercialization planning artifact, not a production, conformance, certification, benchmark, or customer claim.
 
@@ -23,20 +23,16 @@ No sibling checkout, submodule farm, shared private application database, or dir
 
 Transient workflow status is resolved live from GitHub rather than committed as durable truth. Every merge/release decision must re-fetch the exact PR head, base, review threads, reviews, required checks, workflow jobs/logs, rulesets and mergeability. Predecessor-head evidence is non-passing after any head change.
 
-The current integration order is `PR #4 -> PR #5 -> PR #1`. PR #4 is the
-documentation/contract foundation and is admitted to Ready review; PR #5 and
-PR #1 remain Draft until their direct parent integrates. **Ready review admission is not merge authority.** Before this reconciliation commit, PR #4 head
-`09bcaa2a7d2c7608b980a244133f187e2eefa9e7` was mechanically mergeable with
-terminal-green SAST and Security Scan, 26 resolved review threads, no qualifying
-independent approval, and CodeQL skipped under the earlier Draft lifecycle. This
-commit creates a new head, so every predecessor result is historical and the
-new exact head must obtain its own terminal required checks and qualifying
-independent approval before ordinary merge.
+The current integration order is `PR #4 -> PR #5 -> PR #1`. All three remain
+Draft because effective default-branch governance and independent-review
+capacity are not yet proven. **Draft is required until effective default-branch governance and independent-review capacity are proven.** Every changed head
+must then obtain its own terminal required checks, zero valid unresolved
+findings, and qualifying independent approval before ordinary merge.
 
 | Area | Current evidence | Status | Commercialization gap | Next verification |
 | --- | --- | --- | --- | --- |
-| Product boundary | README, `docs/PRD.md`, root `ARCHITECTURE.md`, ADRs, `AGENTS.md` | Defined | Protected main has not integrated this complete boundary | Merge only through ordinary protected path after fresh exact-head evidence |
-| Review lifecycle | `PR #4 -> PR #5 -> PR #1`; parent Ready, children Draft | Review admitted, not merge-ready | Terminal-success required-check evidence and qualifying independent approval remain unsatisfied; resolve both from live GitHub state | Keep child PRs Draft; merge the parent only after fresh terminal gates and approval |
+| Product boundary | README, `docs/PRD.md`, root `ARCHITECTURE.md`, ADRs, `AGENTS.md` | Defined | Default `main` has not integrated this complete boundary and effective protection must be revalidated | Merge only through an ordinary governed path after fresh exact-head evidence |
+| Review lifecycle | `PR #4 -> PR #5 -> PR #1`; all Draft | Not ready | Effective default-branch governance, terminal required checks, and qualifying independent approval remain unsatisfied | Keep every stack member Draft until prerequisites are proven, then review and merge parent-first |
 | Embedding-space identity | ADR/contract design uses canonical material fields, RFC 8785 serialization and SHA-256 stable identity | Contract candidate | No executable Rust identity package/release on this PR | Add Rust value object and golden cross-language canonicalization fixtures test-first |
 | Conversion result | `docs/contracts/conversion-response-v1.schema.json` with `converted` / `abstained` / `error` outcomes | Payload contract candidate | No executable conversion engine or HTTP boundary | Implement Rust-owned numerical boundary; add OpenAPI before any HTTP release claim |
 | Numerical/vector computation | `docs/TRD.md`, architecture and agent policy require Rust ownership | Missing runtime | No production vector/matrix migration kernel, CPU multithreading or GPU contract | Build minimal deterministic Rust kernel with realistic numerical accuracy and failure-denominator tests |
