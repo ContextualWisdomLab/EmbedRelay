@@ -31,6 +31,8 @@ It does not own adjacent concerns:
 | Ranking, fusion, TREC evaluation, and statistical comparison of retrieval lists | [`RankWeave`](https://github.com/ContextualWisdomLab/RankWeave) |
 | LLM routing, provider discovery, and provider credentials | [`contextual-orchestrator`](https://github.com/ContextualWisdomLab/contextual-orchestrator) |
 | Identity-provider administration | [`keyverse`](https://github.com/ContextualWisdomLab/keyverse) for the ContextualWisdomLab deployment profile |
+| Ontology and semantic-layer generation/publication | [`ConceptWeave`](https://github.com/ContextualWisdomLab/ConceptWeave) |
+| Catalog governance, search, and serving | [`semantic-data-portal`](https://github.com/ContextualWisdomLab/semantic-data-portal) |
 | Embedding-model training or hosting | the embedding provider/runtime |
 | Durable vector storage | the vector store behind a versioned port |
 | Document segmentation or semantic-unit chunking | the ingest/retrieval product that owns source interpretation |
@@ -39,7 +41,7 @@ No product gains authority over another product's private persistence by integra
 
 ## Current status
 
-This repository is currently **documentation-first**. It does not yet ship an executable service, package, binary, benchmark, or production HTTP endpoint. The architecture decisions and pre-release payload contract define the implementation boundary; they are not evidence that a runtime release exists.
+This repository is currently **documentation-first**. No executable package or release is currently published. It does not yet ship a service, binary, benchmark, or production HTTP endpoint. The architecture decisions and pre-release payload contract define the implementation boundary; they are not evidence that a runtime release exists.
 
 The first executable release is not complete until it provides, at minimum:
 
@@ -148,10 +150,10 @@ Composition products such as `naruon` or `gyeot` may consume the released contra
 | [References](docs/REFERENCES.md) | Verified scientific and standards basis |
 | [Contributing](CONTRIBUTING.md) | Human contribution and repository-boundary guidance |
 
+## Support
+
+Use [GitHub Issues](https://github.com/ContextualWisdomLab/EmbedRelay/issues) for reproducible documentation defects and bounded feature proposals. Do not include credentials, personal data, proprietary embeddings, or customer records.
+
 ## License
 
 EmbedRelay source and documentation in this repository are licensed under the [Apache License 2.0](LICENSE). Third-party works retain their own licenses; future dependencies and imported assets must remain compatible with ContextualWisdomLab's commercial-use policy and retain required notices/attribution.
-
-## Repository governance
-
-Executable milestones are integrated through protected pull requests. The protected default branch does not host temporary branch-writing materializers, self-deleting finalizers, or one-shot bootstrap authority. Residual workflow registry records are handled by the organization workflow-lifecycle control plane and tracked in `ContextualWisdomLab/.github#945` when needed.

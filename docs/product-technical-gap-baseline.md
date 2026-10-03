@@ -1,8 +1,10 @@
 # Product and technical gap baseline
 
+Status: Proposed
+
 Last reconciled: 2026-10-03
 
-This ledger is derived from the live EmbedRelay repository, current PR #4 product boundary, ADR/reference material, machine-readable conversion contract, and current GitHub review/check state. It is a commercialization planning artifact, not a production, conformance, certification, benchmark, or customer claim.
+This ledger is derived from live default `main@816dcacd4fc1903d91c5cae9b77e37e21811a78d`, Draft foundation PR #4, Draft public-surface PR #5, ADR/reference material, machine-readable conversion contract, and current GitHub review/check state. Pull-request evidence remains Proposed and is not a production, conformance, certification, benchmark, release, Pages-publication, or customer claim.
 
 ## Product responsibility
 
@@ -12,6 +14,8 @@ Adjacent authorities remain separate:
 
 - RankWeave: retrieval-list fusion, ranking evaluation and statistical comparison;
 - contextual-orchestrator: production LLM/provider routing, model discovery and provider credentials;
+- ConceptWeave: ontology and semantic-layer generation/publication;
+- semantic-data-portal: catalog governance, search and serving;
 - keyverse: ContextualWisdomLab deployment-profile identity-provider boundary;
 - embedding providers/runtimes: model execution/training;
 - vector stores: durable vector/index persistence;
@@ -29,7 +33,7 @@ capacity are not yet proven. **Draft is required until effective default-branch 
 must then obtain its own terminal required checks, zero valid unresolved
 findings, and qualifying independent approval before ordinary merge.
 
-| Area | Current evidence | Status | Commercialization gap | Next verification |
+| Area | Current evidence | Status | Commercialization Gap | Next Action / verification |
 | --- | --- | --- | --- | --- |
 | Product boundary | README, `docs/PRD.md`, root `ARCHITECTURE.md`, ADRs, `AGENTS.md` | Defined | Default `main` has not integrated this complete boundary and effective protection must be revalidated | Merge only through an ordinary governed path after fresh exact-head evidence |
 | Review lifecycle | `PR #4 -> PR #5 -> PR #1`; all Draft | Not ready | Effective default-branch governance, terminal required checks, and qualifying independent approval remain unsatisfied | Keep every stack member Draft until prerequisites are proven, then review and merge parent-first |
@@ -45,10 +49,11 @@ findings, and qualifying independent approval before ordinary merge.
 | Security/privacy | Root `SECURITY.md`, architecture and identity ADR define trust/fail-closed boundaries | Design baseline | No executable threat controls, retention/access/export/audit implementation or secret/runtime evidence | Add misuse/tenant/adversarial tests with first runtime slice; keep certification claims separate from control design |
 | Operability | `docs/OPERABILITY.md` defines service lifecycle, compose, accelerator, observability, recovery and load gates | Design baseline | No deployed compose service, backup/restore, rollback, telemetry or incident evidence | Add deployment/recovery only after runtime/persistence exists; measure rather than invent RPO/RTO |
 | Performance | Operability baseline distinguishes synchronous <=20 ms target from async migration work | Unevidenced runtime | No network/load data | Add k6 once a network API exists; measure realistic auth/data/hardware and remove bottlenecks before readiness claim |
-| Test/documentation quality | Canonical README/PRD/TRD/UML/ERD/ADRs/references, security/test/operability, `AGENTS.md`, `CLAUDE.md`, architecture, changelog and this ledger; executable Python contracts; `Documentation Quality` admits stacked and Draft pull requests | Executable foundation gate | Hosted exact-head result remains required after each change; runtime-specific evidence cannot exist before runtime | Require terminal hosted exact-head documentation gate; keep target diagrams/requirements distinct from future as-built runtime evidence |
+| Test/documentation quality | Canonical README/PRD/TRD/UML/ERD/ADRs/references, security/test/operability, `AGENTS.md`, `CLAUDE.md`, architecture, changelog and this ledger; executable shell/Python contracts; `Documentation Quality` admits stacked and Draft pull requests | Executable foundation gate | Hosted exact-head result remains required after each change; runtime-specific evidence cannot exist before runtime | Require terminal hosted exact-head documentation gate; keep target diagrams/requirements distinct from future as-built runtime evidence |
 | Release/package | Apache-2.0 source/documentation grant; no published package claimed | Missing release | No immutable release, SBOM/provenance/package/container evidence | Establish release artifact identity only after executable exact-head GREEN and governance satisfaction |
+| Pages | `docs/index.md` is proposed source only | Not published | No protected integration, deployment, live HTTP, or rendered-source evidence | Verify actual publication before mentioning a Pages URL or availability |
 
-## DDD context map
+## DDD Context Map
 
 ### Core subdomain — Embedding Continuity
 
@@ -109,6 +114,10 @@ No production database is present in the current PR. When persistence becomes ne
 The numerical core must not use undocumented heuristics. Migration accuracy, OOD/abstention and rollback gates require a registered estimator/statistical/experimental design with a full failure denominator and reproducible dataset/revision identities. Realistic evaluation must compare transformed vectors against target-native embeddings/retrieval behavior; a same-dimension cosine result alone is not sufficient evidence of semantic continuity.
 
 Where retrieval-list evaluation or statistical comparison is needed, consume RankWeave rather than reimplementing a competing evaluation engine inside EmbedRelay. Production vector/linear/matrix computation remains Rust-owned.
+
+## License and provenance boundary
+
+Repository-authored source and documentation are covered by the Apache License 2.0 file carried by foundation PR #4. That grant does not relicense future dependencies, imported model artifacts, datasets, or provider assets; every executable release still requires an SBOM, applicable NOTICE material, and provenance evidence bound to the immutable release.
 
 ## Release gates
 

@@ -1,3 +1,8 @@
+---
+title: EmbedRelay
+description: Governed embedding identity and migration infrastructure for ContextualWisdomLab.
+---
+
 # EmbedRelay
 
 EmbedRelay is ContextualWisdomLab's embedding-continuity product for governed cross-model vector migration. It makes embedding-space identity, migration evidence, abstention, rollback, and target-native backfill explicit so retrieval systems can change models without treating incompatible vector spaces as interchangeable.
@@ -23,8 +28,16 @@ EmbedRelay is ContextualWisdomLab's embedding-continuity product for governed cr
 
 ## Current maturity
 
-EmbedRelay is documentation-first today. This documentation site describes the reviewed product and integration contracts; it does not claim an executable service, package, production endpoint, benchmark, or release before those artifacts exist.
+EmbedRelay is documentation-first today. No executable package or release is currently published. This documentation site describes the reviewed product and integration contracts; it does not claim a production endpoint, benchmark, verified GitHub Pages publication, or stable API before those artifacts exist.
 
 ## Ecosystem boundary
 
-EmbedRelay owns embedding-space identity and migration control. Ranking and retrieval-list evaluation belong to RankWeave; LLM routing and provider credentials belong to contextual-orchestrator; the ContextualWisdomLab identity-provider deployment boundary belongs to keyverse; embedding runtimes and vector stores remain behind versioned external ports. Integration is through released contracts rather than sibling checkouts or shared private databases.
+EmbedRelay owns embedding-space identity and migration control. Ranking and retrieval-list evaluation belong to RankWeave; LLM routing and provider credentials belong to contextual-orchestrator; ontology publication belongs to ConceptWeave; catalog governance/search/serving belongs to semantic-data-portal; the ContextualWisdomLab identity-provider deployment boundary belongs to keyverse; embedding runtimes and vector stores remain behind versioned external ports. Product-domain truth, Ubiquitous Language, source data, authorization, and product releases stay with each product. Integration is through released contracts and a consumer-owned Anti-Corruption Layer rather than sibling checkouts or shared private databases.
+
+## Integration readiness
+
+Production integration remains blocked until an immutable release, conformance fixtures, security evidence, SBOM/provenance, and release-bound license/notice evidence exist. Until then, consumers may use only a local test double behind their own port and feature flag; they must not copy this branch or query an internal EmbedRelay database.
+
+## License
+
+Repository-authored EmbedRelay source and documentation are licensed under the [Apache License 2.0](../LICENSE). Third-party dependencies and imported assets retain their own obligations and require release-bound provenance review.
