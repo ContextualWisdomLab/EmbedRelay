@@ -2,7 +2,7 @@
 
 Status: Proposed
 
-Last reconciled: 2026-09-30
+Last reconciled: 2026-10-03
 
 This ledger is derived from protected `main@816dcacd4fc1903d91c5cae9b77e37e21811a78d`, Draft foundation PR #4, Draft public-surface PR #5, ADR/reference material, machine-readable conversion contract, and current GitHub review/check state. Pull-request evidence remains Proposed and is not a production, conformance, certification, benchmark, release, Pages-publication, or customer claim.
 
@@ -27,9 +27,16 @@ No sibling checkout, submodule farm, shared private application database, or dir
 
 Transient workflow status is resolved live from GitHub rather than committed as durable truth. Every merge/release decision must re-fetch the exact PR head, base, review threads, reviews, required checks, workflow jobs/logs, rulesets and mergeability. Predecessor-head evidence is non-passing after any head change.
 
+The current integration order is `PR #4 -> PR #5 -> PR #1`. PR #4 is the
+documentation/contract foundation admitted to Ready review; PR #5 and PR #1
+remain Draft until their direct parent integrates. **Ready review admission is not merge authority.** Every changed head must obtain its own terminal required
+checks, zero valid unresolved findings, and qualifying independent approval
+before ordinary merge.
+
 | Area | Current evidence | Status | Commercialization Gap | Next Action / verification |
 | --- | --- | --- | --- | --- |
 | Product boundary | README, `docs/PRD.md`, root `ARCHITECTURE.md`, ADRs, `AGENTS.md` | Defined | Protected main has not integrated this complete boundary | Merge only through ordinary protected path after fresh exact-head evidence |
+| Review lifecycle | `PR #4 -> PR #5 -> PR #1`; parent Ready, children Draft | Review admitted, not merge-ready | Terminal-success required checks and qualifying independent approval remain required on each exact head | Keep child PRs Draft; merge each parent only after fresh terminal gates and approval |
 | Embedding-space identity | ADR/contract design uses canonical material fields, RFC 8785 serialization and SHA-256 stable identity | Contract candidate | No executable Rust identity package/release on this PR | Add Rust value object and golden cross-language canonicalization fixtures test-first |
 | Conversion result | `docs/contracts/conversion-response-v1.schema.json` with `converted` / `abstained` / `error` outcomes | Payload contract candidate | No executable conversion engine or HTTP boundary | Implement Rust-owned numerical boundary; add OpenAPI before any HTTP release claim |
 | Numerical/vector computation | `docs/TRD.md`, architecture and agent policy require Rust ownership | Missing runtime | No production vector/matrix migration kernel, CPU multithreading or GPU contract | Build minimal deterministic Rust kernel with realistic numerical accuracy and failure-denominator tests |

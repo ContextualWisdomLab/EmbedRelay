@@ -391,6 +391,16 @@ class CanonicalRepositoryBaselineTests(unittest.TestCase):
         self.assertIn("no current database is claimed", erd.lower())
         self.assertIn("does not ship a network service", operability)
 
+    def test_gap_baseline_separates_review_admission_from_merge_authority(self) -> None:
+        """Keep Ready review admission from being mistaken for merge or release authority."""
+
+        baseline = (REPOSITORY_ROOT / "docs" / "product-technical-gap-baseline.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("Ready review admission is not merge authority", baseline)
+        self.assertIn("PR #4 -> PR #5 -> PR #1", baseline)
+        self.assertIn("qualifying independent approval", baseline)
+
     def test_docs_quality_checks_committed_pr_and_push_ranges(self) -> None:
         """Require whitespace validation to inspect committed changes, not an empty worktree diff."""
 
